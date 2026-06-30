@@ -1,0 +1,12 @@
+data/
+web/dist/
+web/node_modules/
+web/vite.config.js
+web/vite.config.d.ts
+*.tsbuildinfo
+*.log
+*.tmp
+palpanel
+palpanel.exe
+!cmd/
+!cmd/**
