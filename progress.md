@@ -1053,3 +1053,7 @@
 - Verification: `npm run build` passed with the existing Vite large chunk warning.
 - Static GHCR/Compose checks passed for workflow package permission, linux/amd64 platform, lowercase-owner image construction, `PALPANEL_IMAGE` Compose override, `.env.example`, and README usage. `git diff --check` reported no whitespace errors; Docker CLI remains unavailable locally, so the real image build/push will be validated by GitHub Actions.
 - Fixed `.gitignore` so the generated frontend assets remain ignored while `internal/frontend/dist/.keep` and `internal/frontend/dist/placeholder.txt` can be tracked for fresh-clone Go embed compatibility.
+- Committed the project state as `9bd8f7d Build PalPanel Lite deployment release path`, created the private GitHub repository `KSAMNI/pal_tool`, added `origin`, and pushed `main`.
+- GitHub Actions run `28494285020` (`Docker GHCR`) completed successfully in 1m56s. Build logs confirm pushed tags `ghcr.io/ksamni/palpanel-lite:main`, `ghcr.io/ksamni/palpanel-lite:latest`, and `ghcr.io/ksamni/palpanel-lite:sha-9bd8f7d` with digest `sha256:d1e7c70fdb8719d25b5b644c2e559a974fd2f31c815bc17c1484f35a8009c0f9`.
+- Direct GHCR package API lookup with the current `gh` token returned 403 because the token lacks `read:packages`; this does not affect the completed workflow publish, and tags/digest were confirmed from the successful Actions logs.
+- Marked Phase 125 complete in `task_plan.md`.

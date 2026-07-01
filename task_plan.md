@@ -632,7 +632,7 @@ Status: complete
 Harden native and Compose shutdown behavior so stopping the panel also stops any PalServer process that the panel launched and still manages before closing SQLite resources. Enable Compose `init: true` and a sufficient stop grace period so container shutdown can forward signals and reap children, update docs/plans, add focused backend lifecycle coverage, and verify normal backend/frontend checks.
 
 ### Phase 125: v3.86 GHCR Docker Image Publishing
-Status: in_progress
+Status: complete
 
 Add a GitHub Actions workflow that builds the Docker image on GitHub-hosted runners and publishes it to GitHub Container Registry as a Linux amd64 image. Keep the GHCR image name lowercase-safe, wire Compose so deployments can override the image reference with `PALPANEL_IMAGE`, document local-build versus GHCR-pull usage, verify workflow/static deployment files plus normal backend/frontend checks, then create the GitHub repository, push `main`, and inspect the publishing run.
 
@@ -820,3 +820,4 @@ Add a GitHub Actions workflow that builds the Docker image on GitHub-hosted runn
 | Docker CLI unavailable in current environment | Phase 117 Compose validation, Phase 123 Docker availability check, Phase 124 Compose lifecycle validation, and Phase 125 local Docker availability check | Recorded the environment limitation; validated files by inspection and continued with normal Go/frontend verification; Phase 125 relies on GitHub Actions for the real Docker build/push |
 | PowerShell glob path failed again with `internal/app/*_test.go` | Phase 124 lifecycle audit search | Continued with explicit file reads or `rg ... -g '*_test.go'` filters, matching the established PowerShell caveat |
 | Global `dist/` ignore hid frontend embed placeholders | Phase 125 pre-commit file audit | Changed the root build-output ignore rule to `/dist/` so `internal/frontend/dist/.keep` and `placeholder.txt` can be tracked while generated assets remain ignored |
+| GHCR package API returned 403 without `read:packages` scope | Phase 125 package verification | Used the successful GitHub Actions run and build logs to confirm pushed tags and digest; publishing itself used the workflow `GITHUB_TOKEN` with `packages: write` |
