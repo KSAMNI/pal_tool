@@ -269,6 +269,109 @@ func TestWorkshopModDownloadExtractsSingleArchiveContent(t *testing.T) {
 	}
 }
 
+func TestWorkshopModDownloadFailsWhenSteamCMDReportsDownloadFailure(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamRoot := t.TempDir()
+	steamPath := filepath.Join(steamRoot, steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("fake steamcmd"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+
+	const workshopID = "3625364851"
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		_, _ = cmd.Stdout.Write([]byte("Downloading item " + workshopID + " ...\n"))
+		_, _ = cmd.Stdout.Write([]byte("[0mERROR! Download item " + workshopID + " failed (Failure).[0m\n"))
+		return nil
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": workshopID,
+	})
+	if resp.StatusCode != http.StatusBadRequest {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("workshop download status = %d, want %d; body=%s", resp.StatusCode, http.StatusBadRequest, body)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read response body: %v", err)
+	}
+	resp.Body.Close()
+	if !strings.Contains(string(body), "SteamCMD failed to download Workshop item") || !strings.Contains(string(body), "PALPANEL_STEAMCMD_USERNAME") {
+		t.Fatalf("response missing actionable SteamCMD failure: %s", body)
+	}
+	var successCount int
+	if err := panel.db.QueryRow(`SELECT COUNT(*) FROM tasks WHERE type = ? AND status = ?`, "mod_workshop_download", "success").Scan(&successCount); err != nil {
+		t.Fatalf("count success workshop tasks: %v", err)
+	}
+	if successCount != 0 {
+		t.Fatalf("success workshop task count = %d, want 0", successCount)
+	}
+	task := requireTaskWithStatus(t, panel, "mod_workshop_download", "failed")
+	if !strings.Contains(task.Log, "SteamCMD failed to download Workshop item") {
+		t.Fatalf("task log missing SteamCMD failure: %s", task.Log)
+	}
+}
+
+func TestWorkshopModDownloadCanUseConfiguredSteamCredentialsWithoutLoggingPassword(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	t.Setenv("PALPANEL_STEAMCMD_USERNAME", "steam-user")
+	t.Setenv("PALPANEL_STEAMCMD_PASSWORD", "steam-secret")
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamRoot := t.TempDir()
+	steamPath := filepath.Join(steamRoot, steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("fake steamcmd"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+
+	const workshopID = "333444555"
+	var capturedArgs []string
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		capturedArgs = append([]string(nil), cmd.Args[1:]...)
+		contentRoot := filepath.Join(cmd.Dir, "steamapps", "workshop", "content", palworldWorkshopAppID, workshopID, "CredentialWorkshopMod")
+		writeSampleModContent(t, contentRoot, "CredentialWorkshopPackage", "1.0.0")
+		return nil
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": workshopID,
+	})
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("workshop download status = %d, want %d; body=%s", resp.StatusCode, http.StatusCreated, body)
+	}
+	resp.Body.Close()
+
+	argsText := strings.Join(capturedArgs, " ")
+	if !strings.Contains(argsText, "+login steam-user steam-secret") {
+		t.Fatalf("steamcmd args did not use configured credentials: %q", argsText)
+	}
+	task := requireTaskWithStatus(t, panel, "mod_workshop_download", "success")
+	if strings.Contains(task.Log, "steam-secret") {
+		t.Fatalf("task log leaked Steam password: %s", task.Log)
+	}
+	if !strings.Contains(task.Log, "+login steam-user "+redactedValue) {
+		t.Fatalf("task log did not show redacted Steam login args: %s", task.Log)
+	}
+}
+
 func TestWorkshopModDownloadRejectsInvalidIDBeforeCommand(t *testing.T) {
 	panel, err := New(t.TempDir())
 	if err != nil {

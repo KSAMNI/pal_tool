@@ -59,6 +59,7 @@ type workshopModDownloadRequest struct {
 const palworldWorkshopAppID = "1623730"
 const maxModArchiveUploadBytes int64 = 512 << 20
 const maxModInfoJSONBytes int64 = 1 << 20
+const maxSteamCMDWorkshopOutputBytes int64 = 64 << 10
 const modExtractorOutputTruncatedSuffix = " [... output truncated]"
 
 var modArchiveMultipartMemoryBytes int64 = 32 << 20
@@ -454,23 +455,65 @@ func (a *App) installWorkshopMod(workshopID string, taskID int64) (modRecord, er
 }
 
 func (a *App) downloadSteamWorkshopItem(taskID int64, steamPath, workshopID string) error {
-	args := []string{
-		"+login", "anonymous",
+	loginArgs, logLoginArgs, err := steamCMDWorkshopLoginArgs()
+	if err != nil {
+		return err
+	}
+	args := append([]string{}, loginArgs...)
+	args = append(args,
 		"+workshop_download_item", palworldWorkshopAppID, workshopID, "validate",
 		"+quit",
-	}
-	a.logTaskf(taskID, "Running %s %s", steamPath, strings.Join(args, " "))
+	)
+	logArgs := append([]string{}, logLoginArgs...)
+	logArgs = append(logArgs,
+		"+workshop_download_item", palworldWorkshopAppID, workshopID, "validate",
+		"+quit",
+	)
+	a.logTaskf(taskID, "Running %s %s", steamPath, strings.Join(logArgs, " "))
 	cmd := exec.Command(steamPath, args...)
 	cmd.Dir = filepath.Dir(steamPath)
-	writer := &taskLogWriter{app: a, taskID: taskID}
+	logWriter := &taskLogWriter{app: a, taskID: taskID}
+	captured := &limitedExtractorOutput{limit: maxSteamCMDWorkshopOutputBytes}
+	writer := io.MultiWriter(logWriter, captured)
 	cmd.Stdout = writer
 	cmd.Stderr = writer
-	err := a.runExternalCommand(cmd)
-	writer.Flush()
+	err = a.runExternalCommand(cmd)
+	logWriter.Flush()
 	if err != nil {
 		return fmt.Errorf("download Steam Workshop item %s: %w", workshopID, err)
 	}
+	if failure := steamCMDWorkshopDownloadFailure(captured.String(), workshopID); failure != "" {
+		return errors.New(failure)
+	}
 	return nil
+}
+
+func steamCMDWorkshopLoginArgs() ([]string, []string, error) {
+	username := strings.TrimSpace(os.Getenv("PALPANEL_STEAMCMD_USERNAME"))
+	if username == "" {
+		return []string{"+login", "anonymous"}, []string{"+login", "anonymous"}, nil
+	}
+	password := os.Getenv("PALPANEL_STEAMCMD_PASSWORD")
+	if strings.TrimSpace(password) == "" {
+		return nil, nil, errors.New("PALPANEL_STEAMCMD_PASSWORD is required when PALPANEL_STEAMCMD_USERNAME is set")
+	}
+	return []string{"+login", username, password}, []string{"+login", username, redactedValue}, nil
+}
+
+func steamCMDWorkshopDownloadFailure(output, workshopID string) string {
+	for _, line := range strings.Split(output, "\n") {
+		cleaned := cleanSteamCMDOutputLine(line)
+		if strings.Contains(cleaned, "ERROR!") && strings.Contains(cleaned, "Download item") {
+			return fmt.Sprintf("SteamCMD failed to download Workshop item %s: %s. Anonymous SteamCMD access may be blocked for this item; configure PALPANEL_STEAMCMD_USERNAME and PALPANEL_STEAMCMD_PASSWORD for a Steam account that owns Palworld, or upload the MOD archive manually.", workshopID, cleaned)
+		}
+	}
+	return ""
+}
+
+func cleanSteamCMDOutputLine(line string) string {
+	line = strings.ReplaceAll(line, "\x1b[0m", "")
+	line = strings.ReplaceAll(line, "[0m", "")
+	return strings.TrimSpace(line)
 }
 
 func (a *App) inspectSteamWorkshopModContent(contentDir string) (modInfo, func(), error) {

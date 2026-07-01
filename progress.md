@@ -1098,3 +1098,11 @@
 - Verification: `go test ./internal/app -run 'TestListModsReturnsEmptyArrayWhenNoModsInstalled|TestWorkshopModDownload|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
 - Verification: `npm run build` passed with the existing Vite large chunk warning.
 - Verification: `go test ./...` passed.
+- User reported Workshop item `3625364851` failed with SteamCMD `ERROR! Download item ... failed (Failure)` and then the panel reported only a missing downloaded directory. Confirmed through Steam Web API that the item is public and belongs to Palworld app `1623730`, so the AppID is correct; the failure is SteamCMD anonymous download access.
+- Added Phase 131: Workshop download now captures SteamCMD output and treats `ERROR! Download item ... failed` as a failed task even if SteamCMD exits successfully, returning an actionable message about anonymous access and authenticated Steam credentials.
+- Added optional `PALPANEL_STEAMCMD_USERNAME` and `PALPANEL_STEAMCMD_PASSWORD` environment variables for authenticated Workshop downloads, wired them through root/deploy Compose files and `.env.example`, and documented the behavior in README. Passwords are redacted from task logs.
+- Added focused tests for SteamCMD-reported Workshop failure and credential argument redaction.
+- Verification: `go test ./internal/app -run 'TestWorkshopModDownload|TestListModsReturnsEmptyArrayWhenNoModsInstalled' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Marked Phase 131 complete in `task_plan.md`.

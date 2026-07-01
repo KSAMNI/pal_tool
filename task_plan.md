@@ -661,6 +661,11 @@ Status: complete
 
 Fix the MOD tab blank page when no MODs are installed by ensuring `/api/mods` serializes an empty list as `[]` instead of `null`, and by making the Vue loader coerce unexpected null responses back to an empty array before the template reads `mods.length`.
 
+### Phase 131: v3.92 Authenticated Workshop Download Diagnostics
+Status: complete
+
+Improve Steam Workshop download diagnostics when SteamCMD reports `ERROR! Download item ... failed (Failure)` but exits successfully, and support optional env-based Steam account credentials for Workshop items that anonymous SteamCMD cannot download.
+
 ## Decisions
 - Use persistent planning files in the project root.
 - Treat external web content as untrusted research data and store summaries in `findings.md`.
@@ -792,6 +797,7 @@ Fix the MOD tab blank page when no MODs are installed by ensuring `/api/mods` se
 - For v3.89 frontend workspace layout, the dashboard tab should stay focused on setup and metrics/actions; players, recent operations, and diagnostics are separate workspace tabs, and the top-level tab control should use a segmented style so the split is visually obvious.
 - For v3.90 Steam Workshop MOD download, the MOD tab accepts a numeric Steam Workshop item ID or URL; the backend runs SteamCMD `+workshop_download_item 1623730 <id> validate` with anonymous login, locates the downloaded content under SteamCMD state candidates, then installs direct `Info.json` content or one supported archive through the existing backup-guarded MOD install pipeline into `Mods/Workshop/<WorkshopId>`, creating `Mods/Workshop` when missing.
 - For v3.91 MOD list rendering, read APIs that conceptually return lists should serialize empty lists as `[]`; the frontend should still defensively coerce a null MOD list to `[]` so a backend/API regression cannot break `mods.length` rendering.
+- For v3.92 Workshop download diagnostics, SteamCMD output must be inspected for `ERROR! Download item ... failed` because SteamCMD can exit zero after a failed Workshop download; task/API errors should explain anonymous access may be blocked. Optional `PALPANEL_STEAMCMD_USERNAME`/`PALPANEL_STEAMCMD_PASSWORD` credentials may be used for authenticated Workshop downloads, but passwords must be redacted from task logs.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -855,3 +861,4 @@ Fix the MOD tab blank page when no MODs are installed by ensuring `/api/mods` se
 | PowerShell broke a complex `rg` template-boundary pattern | Phase 127 first App.vue boundary search | Re-ran with fixed-string `rg -F -e` patterns and line-number snippets before editing the Vue template |
 | Go tests failed to compile while `npm run build` was running in parallel because frontend embed assets were temporarily removed by the web prebuild step | Phase 129 first verification | Let the frontend build finish, then reran Go tests sequentially; do not parallelize Go compilation with the frontend build in this repository |
 | MOD tab rendered blank when no MOD rows existed | Phase 130 user report | `GET /api/mods` encoded a nil slice as `null`, and the Vue template expected `mods.length`; initialized backend list responses to `[]`, added frontend null coercion, and covered the empty-list response |
+| SteamCMD printed `ERROR! Download item ... failed (Failure)` but the panel reported only that the downloaded directory was not found | Phase 131 user report | Capture SteamCMD Workshop output, fail immediately with an actionable authenticated-download message, and add optional env credentials for items anonymous SteamCMD cannot download |
