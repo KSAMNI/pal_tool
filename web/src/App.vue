@@ -47,7 +47,7 @@
             </div>
           </header>
 
-          <n-tabs v-model:value="activeTab" type="line" animated class="workspace-tabs">
+          <n-tabs v-model:value="activeTab" type="segment" animated class="workspace-tabs">
             <n-tab-pane name="server" tab="服务器" display-directive="show" class="workspace-tab-pane">
               <section class="grid">
             <n-card title="服务器状态">
@@ -371,7 +371,9 @@
               </n-popconfirm>
             </n-space>
           </n-card>
+            </n-tab-pane>
 
+            <n-tab-pane name="players" tab="玩家" display-directive="show" class="workspace-tab-pane">
           <n-card class="wide-card">
             <template #header>
               <div class="card-header">
@@ -414,7 +416,9 @@
               </div>
             </div>
           </n-card>
+            </n-tab-pane>
 
+            <n-tab-pane name="operations" tab="运维" display-directive="show" class="workspace-tab-pane">
           <n-card class="wide-card">
             <template #header>
               <div class="card-header">
@@ -455,7 +459,9 @@
               </div>
             </div>
           </n-card>
+            </n-tab-pane>
 
+            <n-tab-pane name="diagnostics" tab="检测" display-directive="show" class="workspace-tab-pane">
           <n-card title="检测结果" class="wide-card">
             <n-descriptions bordered :column="1" size="small">
               <n-descriptions-item label="PalServer 二进制">

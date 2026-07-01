@@ -1074,3 +1074,8 @@
 - Verification: `npm run build` passed with the existing Vite large chunk warning.
 - Verification: `go test ./...` passed.
 - Marked Phase 127 complete in `task_plan.md`.
+- User feedback after Phase 127: the UI still felt like one long page because the dashboard tab contained setup, metrics, players, recent operations, and diagnostics together; deployed containers using old `latest` images may also require an explicit Compose pull/recreate to see new frontend assets.
+- Added and completed Phase 128: changed the top-level workspace `n-tabs` to segmented style and split the authenticated UI into `服务器`, `仪表盘`, `玩家`, `运维`, `检测`, `配置`, `备份`, `MOD`, and `日志` tabs. The dashboard tab now keeps setup plus metrics/REST actions, while players, recent operations, and diagnostics are separate panes.
+- Corrected the first Phase 128 insertion point after it matched the setup-guide card instead of the dashboard card; rechecked pane boundaries by line number before verification.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.

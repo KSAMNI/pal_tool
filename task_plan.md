@@ -646,6 +646,11 @@ Status: complete
 
 Rework the authenticated Vue frontend from one long vertical page into practical tabbed sections while preserving existing server, dashboard, config, backup, MOD, log, and settings behavior.
 
+### Phase 128: v3.89 Granular Frontend Workspace Tabs
+Status: complete
+
+Refine the tabbed frontend after user feedback so the dashboard no longer remains a long mixed page: make the workspace tabs visually obvious and split player, recent operations, and diagnostics into separate tabs.
+
 ## Decisions
 - Use persistent planning files in the project root.
 - Treat external web content as untrusted research data and store summaries in `findings.md`.
@@ -774,6 +779,7 @@ Rework the authenticated Vue frontend from one long vertical page into practical
 - For v3.86 GHCR publishing, GitHub Actions owns remote Docker builds and publishes `ghcr.io/<lowercase-owner>/palpanel-lite` for `main`, `v*` tags, and manual dispatch; Compose keeps source-build support but can pull any full image reference through `PALPANEL_IMAGE`.
 - For v3.87 Docker ownership repair, persistence stays as explicit bind mounts such as `./data:/data` and `./PalServer:/palserver`, not Docker named/anonymous volumes; the image entrypoint runs briefly as root only to normalize mounted directory ownership, then executes the panel as the configured non-root `palpanel` UID/GID; Compose must not set `user:` because that would block the repair step.
 - For v3.88 frontend workspace layout, the authenticated Vue UI should use Naive UI tabs to separate server/settings, dashboard, config, backups, MODs, and logs while keeping existing API behavior and local operation guards unchanged.
+- For v3.89 frontend workspace layout, the dashboard tab should stay focused on setup and metrics/actions; players, recent operations, and diagnostics are separate workspace tabs, and the top-level tab control should use a segmented style so the split is visually obvious.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
