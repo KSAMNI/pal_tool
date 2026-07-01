@@ -63,6 +63,29 @@ body {
   gap: 8px;
 }
 
+.workspace-tabs {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.workspace-tab-pane {
+  padding-top: 16px;
+}
+
+.workspace-tab-pane > .grid {
+  max-width: none;
+  margin: 0;
+}
+
+.workspace-tab-pane > .wide-card {
+  max-width: none;
+  margin: 16px 0 0;
+}
+
+.workspace-tab-pane > .wide-card:first-child {
+  margin-top: 0;
+}
+
 .grid {
   display: grid;
   grid-template-columns: minmax(300px, 0.8fr) minmax(420px, 1.2fr);

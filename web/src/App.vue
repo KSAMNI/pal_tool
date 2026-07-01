@@ -47,7 +47,9 @@
             </div>
           </header>
 
-          <section class="grid">
+          <n-tabs v-model:value="activeTab" type="line" animated class="workspace-tabs">
+            <n-tab-pane name="server" tab="服务器" display-directive="show" class="workspace-tab-pane">
+              <section class="grid">
             <n-card title="服务器状态">
               <div class="status-row">
                 <span>系统</span>
@@ -203,8 +205,10 @@
                 </n-button>
               </n-form>
             </n-card>
-          </section>
+              </section>
+            </n-tab-pane>
 
+            <n-tab-pane name="dashboard" tab="仪表盘" display-directive="show" class="workspace-tab-pane">
           <n-card v-if="showSetupGuide" class="wide-card setup-guide">
             <template #header>
               <div class="card-header">
@@ -477,7 +481,9 @@
               服务器运行中时端口占用可能是正常状态；启动前占用通常表示存在冲突。
             </p>
           </n-card>
+            </n-tab-pane>
 
+            <n-tab-pane name="config" tab="配置" display-directive="show" class="workspace-tab-pane">
           <n-card class="wide-card">
             <template #header>
               <div class="card-header">
@@ -670,7 +676,9 @@
               </n-tabs>
             </template>
           </n-card>
+            </n-tab-pane>
 
+            <n-tab-pane name="backups" tab="备份" display-directive="show" class="workspace-tab-pane">
           <n-card class="wide-card">
             <template #header>
               <div class="card-header">
@@ -733,7 +741,9 @@
               </div>
             </div>
           </n-card>
+            </n-tab-pane>
 
+            <n-tab-pane name="mods" tab="MOD" display-directive="show" class="workspace-tab-pane">
           <n-card class="wide-card">
             <template #header>
               <div class="card-header">
@@ -841,6 +851,9 @@
             </div>
           </n-card>
 
+            </n-tab-pane>
+
+            <n-tab-pane name="logs" tab="日志" display-directive="show" class="workspace-tab-pane">
           <section class="grid log-grid">
             <n-card>
               <template #header>
@@ -858,6 +871,8 @@
               <pre class="log-box">{{ serverLogText }}</pre>
             </n-card>
           </section>
+            </n-tab-pane>
+          </n-tabs>
         </template>
       </main>
       <n-modal v-model:show="modInfoVisible">
@@ -881,6 +896,7 @@ const loading = ref(true)
 const busy = ref(false)
 const setupRequired = ref(false)
 const authenticated = ref(false)
+const activeTab = ref('server')
 const realtimeConnected = ref(false)
 const status = ref<ServerStatus | null>(null)
 const tasks = ref<TaskRecord[]>([])

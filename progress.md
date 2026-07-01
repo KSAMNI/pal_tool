@@ -1067,3 +1067,10 @@
 - Committed and pushed `d2caccb Repair Docker bind mount ownership`.
 - GitHub Actions run `28494992659` (`Docker GHCR`) completed successfully in 1m51s. Build logs confirm pushed tags `ghcr.io/ksamni/palpanel-lite:main`, `ghcr.io/ksamni/palpanel-lite:latest`, and `ghcr.io/ksamni/palpanel-lite:sha-d2caccb` with digest `sha256:a9b8e1b8b1d75b44cbfea992b4cf335cfac4918ecdd6eeb0d8a2a4b141837742`.
 - Marked Phase 126 complete in `task_plan.md`.
+- Started Phase 127 after the user requested changing the frontend from one long page into tabs. Confirmed `main` is clean and synced with `origin/main`, added the in-progress phase, and began auditing `web/src/App.vue` plus `web/src/styles.css`.
+- Initial frontend audit: the authenticated UI currently renders server status and settings in a two-column grid, then setup guide, dashboard, players, recent activity, diagnostics, config, backups, MODs, and logs as sequential `n-card` sections in one long template. The practical change is to preserve existing data/actions and wrap those sections with Naive UI tabs.
+- Implemented Phase 127 in `web/src/App.vue` and `web/src/styles.css`: added an authenticated workspace `n-tabs` shell with server/settings, dashboard, config, backups, MOD, and logs panes; kept the existing cards, API calls, local guards, dialogs, and upload refs in place; added tab workspace spacing so cards retain the existing 1180px operational layout.
+- Corrected an initial tab-boundary patch that matched repeated `wide-card` contexts too early and briefly placed dashboard/player cards under the wrong panes; re-audited line-number snippets and moved pane boundaries to the actual detection/config/backup/MOD/log card edges.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Marked Phase 127 complete in `task_plan.md`.
