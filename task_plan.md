@@ -681,6 +681,11 @@ Status: complete
 
 Reduce frontend automatic refresh pressure on the Palworld REST API. Keep manual refresh immediate, but slow background runtime fallback polling to 10 seconds and throttle the heavy dashboard aggregation endpoint, which proxies Palworld REST reads, to 30 seconds.
 
+### Phase 135: v3.96 Chinese User Guide
+Status: complete
+
+Add a Chinese README tutorial for practical deployment and operation: Docker Compose quick start, `.env` settings, first-run setup, PalServer install, launch/config editing, REST API, backups, MOD upload/Workshop workflows, updates, remote access, common commands, troubleshooting, and security notes. Link it from the root README.
+
 ## Decisions
 - Use persistent planning files in the project root.
 - Treat external web content as untrusted research data and store summaries in `findings.md`.
@@ -816,6 +821,7 @@ Reduce frontend automatic refresh pressure on the Palworld REST API. Keep manual
 - For v3.93 ManagedPak MOD layout support, MOD source inspection first recognizes Steam client installed layouts with `Mods/ManagedMods/<PackageName>/Info.json` and `Pal/Content/Paks/~WorkshopMods/<folder>/*.pak`; those installs copy metadata and pak directories to the matching PalServer paths, keep enable/disable through `PalModSettings.ini`, report `install_path` as the actual pak directory, and delete both `ManagedMods` metadata and `~WorkshopMods` pak files.
 - For v3.94 complete config controls, backend `PalWorldSettings.ini` field definitions are the single source for frontend rendering: they include original Palworld keys, JSON keys, type, group, description, enum choices, and numeric bounds; the frontend renders groups dynamically so the current default `OptionSettings` sample is covered without hand-maintaining separate Vue form sections.
 - For v3.95 REST dashboard polling, the frontend should not call the Palworld REST-backed dashboard every few seconds in the background; runtime fallback polling defaults to 10 seconds and dashboard REST aggregation defaults to 30 seconds, while manual refresh remains immediate.
+- For v3.96 Chinese documentation, keep the English README as the implementation/status reference and add `README.zh-CN.md` as the operator-facing deployment and usage tutorial.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |

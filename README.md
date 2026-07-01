@@ -2,6 +2,8 @@
 
 Single-machine, single-server Palworld dedicated server management panel.
 
+Chinese deployment and user guide: [README.zh-CN.md](README.zh-CN.md)
+
 Current implementation status:
 
 - Go backend scaffold.

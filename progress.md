@@ -1134,3 +1134,5 @@
 - Started and completed Phase 134 after user feedback that REST API refresh was too frequent. The Vue runtime fallback poll interval is now 10 seconds, and `loadPalDashboard(false)` is throttled so the Palworld REST-backed `/api/dashboard` aggregation runs at most once every 30 seconds in the background; manual refresh still runs immediately, and background polling skips dashboard refresh while one is already in flight.
 - Verification: `npm run build` passed with the existing Vite large chunk warning.
 - Verification: `go test ./...` passed.
+- Started and completed Phase 135 after the user requested a complete Chinese README tutorial. Added `README.zh-CN.md` with Docker Compose deployment, `.env` explanation, first-run setup, PalServer install, config editing, REST API, backup/restore, MOD upload and Workshop workflows, updates, remote access, commands, troubleshooting, and security guidance. Linked it from `README.md`.
+- Verification: `git diff --cached --check` passed for the documentation changes.
