@@ -1,0 +1,16 @@
+.git
+.tmp
+data
+dist
+palpanel
+palpanel.exe
+*.log
+*.tmp
+*.tsbuildinfo
+
+web/dist
+web/node_modules
+web/vite.config.js
+web/vite.config.d.ts
+
+internal/frontend/dist

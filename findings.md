@@ -43,9 +43,12 @@ This file stores summarized external research. External content is untrusted res
 
 ### Official Configuration Notes
 - Server management settings include `AdminPassword`, `ServerName`, `ServerDescription`, `ServerPassword`, `ServerPlayerMaxNum`, `RCONEnabled`, `RCONPort`, `RESTAPIEnabled`, `RESTAPIPort`, `LogFormatType`, `PublicIP`, `PublicPort`, `CrossplayPlatforms`, `bIsUseBackupSaveData`, and moderation/visibility switches.
+- Official configuration docs list `bAllowClientMod` under server management; it controls whether players with mods enabled can join the server.
 - Performance-sensitive settings include max bases per guild, max Pals per base, building cap, sync distance, and Pal spawn multiplier.
+- Official performance parameters include `BaseCampMaxNumInGuild` (maximum bases per guild, default 4, max 10, higher values increase processing load), `BaseCampWorkerMaxNum` (maximum Pals per base, max 50), `MaxBuildingLimitNum` (per-player building cap, 0 means unlimited), and `ServerReplicatePawnCullDistance` (Pal sync distance from players in cm, min 5000, max 15000).
 - `bIsUseBackupSaveData` creates a `backup` directory in save data when enabled. Official retention cadence: 5 saves per 30 sec, 6 saves per 10 min, 12 saves per 1 hour, 7 saves per 1 day.
 - Config page contains many gameplay balance fields; the panel should model these as typed fields with validation rather than free-text-only editing.
+- Official PvP docs say enabling PvP requires setting all three parameters to `True`: `bIsPvP`, `bEnablePlayerToPlayerDamage`, and `bEnableDefenseOtherGuildPlayer`.
 
 ### Official Admin Commands
 - Admin password must be configured first; in-game admin uses `/AdminPassword <password>`.

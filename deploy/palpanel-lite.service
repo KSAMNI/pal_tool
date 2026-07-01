@@ -1,0 +1,16 @@
+[Unit]
+Description=PalPanel Lite
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=palpanel
+Group=palpanel
+WorkingDirectory=/opt/palpanel-lite
+ExecStart=/opt/palpanel-lite/palpanel -addr 127.0.0.1:8080 -data-dir /opt/palpanel-lite/data
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

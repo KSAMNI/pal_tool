@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vue-tsc -b && vite build",
+    "prebuild": "node -e \"const fs=require('fs'); fs.rmSync('../internal/frontend/dist/assets',{recursive:true,force:true}); fs.rmSync('../internal/frontend/dist/index.html',{force:true})\"",
+    "build": "vue-tsc --noEmit -p tsconfig.json && vite build",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {

@@ -1,6 +1,13 @@
 data/
+/dist/
+.tmp/
+.env
+!.env.example
 web/dist/
 web/node_modules/
+internal/frontend/dist/*
+!internal/frontend/dist/.keep
+!internal/frontend/dist/placeholder.txt
 web/vite.config.js
 web/vite.config.d.ts
 *.tsbuildinfo

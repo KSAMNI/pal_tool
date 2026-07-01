@@ -21,3 +21,1035 @@
 - Fixed TypeScript build config by adding `noEmit`; removed generated `.js/.map` files from `web/src`. Re-ran `npm run build` and `go test ./...`; both passed.
 - Resumed after an interrupted turn. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; no `.planning` active plan was present, and session catchup produced no unsynced context.
 - Added Phase 9 to `task_plan.md`: v0.1 server-control implementation for SteamCMD install/update, native PalServer start/stop/restart, task/log APIs, and frontend controls.
+- Implemented Phase 9 backend APIs: `POST /api/server/install`, `/update`, `/start`, `/stop`, `/restart`, plus `GET /api/server/logs` and `GET /api/tasks`.
+- Added background SteamCMD tasks with task log persistence, app-managed PalServer process tracking, polling server logs, and launch-argument parsing.
+- Wired the Vue UI to install/update/start/stop/restart actions and added task/server log panels with runtime polling.
+- Added `internal/app/server_test.go` covering authenticated server-control routes and launch argument parsing.
+- Fixed a TypeScript build-mode issue: `tsconfig.node.json` cannot disable emit while referenced by `vue-tsc -b`; changed the build script to `vue-tsc --noEmit -p tsconfig.json && vite build` and removed the main tsconfig reference.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}` and `/` returned HTTP 200 with the PalPanel Lite title.
+- Resumed current plan. Re-read planning files and current worktree; Phase 11 is complete, so the next planned milestone is v0.4 MOD management.
+- Added Phase 12 to `task_plan.md`: local MOD archive upload, safe extraction, `Info.json` parsing, server-support detection, install to `Mods/Workshop`, metadata persistence, enable/disable through `PalModSettings.ini`, deletion with backup, API routes, tests, and frontend controls.
+- Implemented Phase 12 backend APIs: `GET /api/mods`, `POST /api/mods/upload`, `POST /api/mods/{id}/enable`, `POST /api/mods/{id}/disable`, `DELETE /api/mods/{id}`, and `GET /api/mods/{id}/info`.
+- Added `internal/app/mods.go` with native ZIP extraction, external 7z/RAR extraction support when `7z`/`7zz`/`7za`/`unar`/`bsdtar` is available, safe extraction path checks, `Info.json` discovery/parsing, recursive server-support detection for `IsServer: true`, install/update by `PackageName`, and `PalModSettings.ini` ActiveModList editing while preserving unrelated lines.
+- Wired MOD operations to `pre_mod` backups before install, enable/disable, and delete.
+- Added `internal/app/mods_test.go` covering upload/install, enable/disable, delete, and `PalModSettings.ini` rendering.
+- Wired the Vue UI to list MODs, upload `.zip/.7z/.rar`, enable/disable, view `Info.json`, and delete with confirmation.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}` and `/` returned HTTP 200 with the PalPanel Lite title.
+- Resumed current plan. Re-read planning files and current worktree; Phase 12 is complete, so the next planned milestone is v0.5 REST dashboard and player management.
+- Added Phase 13 to `task_plan.md`: backend-only Palworld REST API Basic Auth, info/metrics/player aggregation, player list, broadcast, kick, ban, unban, save-world actions, tests with a fake Palworld REST server, and frontend dashboard/player controls.
+- Resumed current plan. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context. Phase 10 is complete, so the next planned project milestone is v0.3 backup and restore.
+- Added Phase 11 to `task_plan.md`: zip backups under `data/backups`, SQLite backup metadata, manual/pre-operation backup APIs, restore with protective pre-restore backup, deletion with path checks, retention for non-manual backups, and frontend backup controls.
+- Implemented Phase 11 backend APIs: `GET /api/backups`, `POST /api/backups`, `POST /api/backups/{id}/restore`, and `DELETE /api/backups/{id}`.
+- Added `internal/app/backup.go` with zip archive creation under `data/backups`, backup source selection from `Pal/Saved`, `Mods`, `DefaultPalWorldSettings.ini`, and `PalWorldSettings.ini`, SQLite metadata records, safe restore extraction, safe delete path checks, protective `pre_restore` backups, and automatic retention for non-manual backup types.
+- Wired pre-operation backups into config saves (`pre_config`), SteamCMD install/update (`pre_update`), and server startup (`startup`). Existing config `.bak` behavior remains in place as an extra narrow config backup.
+- Added `internal/app/backup_test.go` covering backup create/restore/delete routes and automatic retention while preserving manual backups.
+- Wired the Vue UI to list backups, create manual backups, restore with confirmation, and delete with confirmation.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}` and `/` returned HTTP 200 with the PalPanel Lite title.
+
+## 2026-07-01
+- Resumed current plan. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context. Existing local backend was still running on `127.0.0.1:8080`.
+- Added Phase 10 to `task_plan.md`: v0.2 visual config editor for `PalWorldSettings.ini`, including platform-aware path resolution, initialization from default config, typed common fields, save-time `.bak`, API routes, tests, and frontend controls.
+- Implemented Phase 10 backend APIs: `GET /api/config`, `PUT /api/config`, and `POST /api/config/backup`.
+- Added `internal/app/config.go` with platform-aware `Pal/Saved/Config/<Platform>Server/PalWorldSettings.ini` resolution, initialization from `DefaultPalWorldSettings.ini` or a minimal default, `OptionSettings=(...)` parsing/writing, typed common fields, unknown field preservation, and timestamped `.bak` creation before saves.
+- Added `internal/app/config_test.go` covering quoted comma parsing, nested value parsing, config initialization, save-time backup, unknown field preservation, and authenticated config routes.
+- Wired the Vue UI to load/save/backup config and added tabs for basic settings, rates, world settings, network settings, and advanced switches.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}` and `/` returned HTTP 200 with the PalPanel Lite title.
+- Completed Phase 13 backend REST dashboard/player management: added Palworld REST API client with backend-only Basic Auth, dashboard aggregation from `/info`, `/metrics`, and `/players`, player list route, broadcast/save routes, and kick/ban/unban player routes.
+- Added REST API settings fields for username/password, redacted saved password on reads, and preserved the existing password when the settings form submits an empty password.
+- Added fake Palworld REST API tests covering dashboard aggregation, player list, Basic Auth forwarding, kick, ban, unban, announce, save, and settings password redaction/preservation.
+- Wired the Vue UI to REST API settings, dashboard metrics, broadcast, save world, unban, online player list, kick, and ban controls; added compact dashboard/player CSS and fixed missing-player-ID fallback behavior.
+- Updated `README.md` current status with REST dashboard and player management support.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}` and `/` returned HTTP 200 with the PalPanel Lite title.
+- Added Phase 14 to `task_plan.md`: v0.6 packaging and install experience for embedded frontend assets, runtime flags, path detection, service install guidance, release commands, and packaged-binary smoke checks.
+- Implemented embedded frontend support through `internal/frontend`: Vite production builds now output to `internal/frontend/dist`, the Go binary embeds those assets, and the backend serves the Vue SPA with route fallback while keeping a fallback page for missing build assets.
+- Added `-addr`, `-data-dir`, and `-version` runtime flags, still defaulting from `PALPANEL_ADDR` and `PALPANEL_DATA_DIR`.
+- Added PalServer first-run detection from `PALPANEL_PAL_SERVER_PATH`, `PALWORLD_SERVER_PATH`, `PAL_SERVER_PATH`, current/executable directories, and common Steam install paths when `pal_server_path` is not yet configured.
+- Added Linux systemd template at `deploy/palpanel-lite.service` and Windows NSSM helper script at `deploy/windows-service-nssm.ps1`.
+- Updated `README.md` with production build commands, service install examples, path detection notes, and backup/MOD/REST API exposure warnings.
+- Fixed a Go embed setup failure where a dist directory containing only `.keep` is treated as empty by Go; added `internal/frontend/dist/placeholder.txt` and documented the error in `task_plan.md`.
+- Verification: `npm run build` passed with only the existing Vite large chunk warning. `go test ./...` passed. A temporary packaged binary built with `go build -ldflags "-X main.version=smoke"` returned `{"status":"ok"}` from `/api/health`, served `/` with HTTP 200, and returned the embedded built app HTML.
+- Restarted local backend on `127.0.0.1:8080` with the new flags; `/api/health` returned `{"status":"ok"}`, `/` returned HTTP 200, and the homepage HTML referenced the embedded built app assets.
+- Added Phase 15 to `task_plan.md`: v0.7 dashboard completeness and graceful REST stop, covering local CPU/memory/disk metrics, recent server logs/tasks/backups, and backend-proxied Palworld REST shutdown/stop actions.
+- Implemented local system summary collection with OS APIs: Windows uses kernel32/system memory/disk calls; Linux uses `/proc/stat`, `unix.Sysinfo`, and `unix.Statfs`; unsupported platforms return explicit dashboard errors while preserving the response shape.
+- Extended `/api/dashboard` with `system`, `recent_logs`, `recent_tasks`, and `recent_backups`, normalizing empty collections to arrays for frontend stability.
+- Added backend routes `POST /api/server/shutdown` and `POST /api/server/rest-stop` to proxy Palworld REST `/shutdown` and `/stop` without exposing REST credentials to the browser.
+- Wired the Vue dashboard to show local CPU, memory, disk, recent backup summary, recent server logs, recent tasks, recent backups, and REST shutdown/stop controls.
+- Updated `README.md` current status with local dashboard resource summary and REST shutdown/stop support.
+- Fixed a dashboard JSON shape issue where empty recent operation collections encoded as `null`; normalized them to empty arrays and documented the error in `task_plan.md`.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning. A temporary packaged binary built with `go build -ldflags "-X main.version=phase15-smoke"` returned `{"status":"ok"}` from `/api/health`, served `/` with HTTP 200 and embedded assets, and returned HTTP 401 for unauthenticated `/api/dashboard`.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}`, `/` returned HTTP 200 with embedded assets, and unauthenticated `/api/dashboard` returned HTTP 401.
+- Added Phase 16 to `task_plan.md`: v0.8 automatic backup scheduler and save-before-backup, covering configurable interval backups, startup scheduler, single-flight backup execution, due checks, REST `/save` before backups, UI settings, and tests.
+- Added `auto_backup_interval_hours` setting with a 24-hour default, API persistence, and frontend settings control.
+- Implemented background automatic backup scheduler that starts with the app, checks once per minute, creates `auto` backups only when due, records an `auto_backup` task, respects `auto_backup_enabled`, and keeps existing non-manual retention behavior.
+- Made backup creation single-flight with a backup mutex to avoid concurrent archive writes from manual, scheduled, and pre-operation backups.
+- Added best-effort Palworld REST `/save` before backup creation when REST credentials are configured; backup creation continues if REST save is unavailable and stores the save result in the backup note.
+- Updated `README.md` current status with configurable automatic backups and save-before-backup support.
+- Added tests for REST save-before-backup, automatic backup due checks, scheduler-triggered backup creation, retention preservation, and settings interval persistence.
+- Fixed a Phase 16 test compile error caused by a missing `strings` import and documented it in `task_plan.md`.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning. A temporary packaged binary built with `go build -ldflags "-X main.version=phase16-smoke"` returned `{"status":"ok"}` from `/api/health`, served `/` with HTTP 200 and embedded assets, and returned HTTP 401 for unauthenticated `/api/dashboard`.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}`, `/` returned HTTP 200 with embedded assets, and unauthenticated `/api/dashboard` returned HTTP 401.
+- Resumed current plan for Phase 17. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Added Phase 17 to `task_plan.md`: centralized sensitive-data redaction for API errors, task logs, server logs, and Palworld REST error bodies.
+- Inspected current redaction gaps: `writeError` serialized `err.Error()` directly; `appendTaskLog` and `appendServerLog` stored raw messages; Palworld REST client included upstream error bodies directly in returned errors.
+- Noted one PowerShell search syntax error from using `rg internal/app/*_test.go`; recorded it in `task_plan.md` and will use direct file reads or `-g '*_test.go'` filters.
+- Implemented Phase 17 backend hardening: added centralized `redactSensitive`, applied it to `writeError`, task logs, server logs, dashboard error strings, and Palworld REST upstream error bodies.
+- Added redaction tests covering function-level patterns, API error serialization, task/server log persistence, and Palworld REST proxied error responses.
+- Updated `README.md` current status and security note to describe known password/auth-field redaction.
+- Verification: `go test ./...` passed, including a rerun after tightening the Basic-auth token redaction pattern. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080` after the final backend change; `/api/health` returned `{"status":"ok"}`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard` returned HTTP 401.
+- Resumed current plan for Phase 18. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified the next clear plan gap: the Chinese plan calls for `REST + WebSocket` and backend-pushed logs/task progress, while current README and UI still use 3-second polling for task/server logs.
+- Added Phase 18 to `task_plan.md`: authenticated WebSocket runtime events for server logs and task changes, Vue subscription with REST polling fallback, backend tests, and normal verification.
+- Recorded a PowerShell snippet-reading error from using `Select-Object -Index 680..920`; future snippets use `-Skip/-First` or parenthesized ranges.
+- Added `github.com/coder/websocket` and implemented `/api/events` as an authenticated same-origin WebSocket endpoint. New connections receive a snapshot of recent tasks, server logs, and running state; task creation/log/status changes and server-log writes broadcast realtime events.
+- Wired the Vue UI to open `/api/events` after login, apply snapshot/task/server-log events to the runtime panels and dashboard recent sections, reconnect automatically, and keep REST polling as fallback for task/log data when the socket is disconnected.
+- Updated Vite dev proxy with `ws: true` for `/api` so `/api/events` works through the development server.
+- Added `internal/app/events_test.go` covering unauthenticated WebSocket rejection, authenticated snapshot delivery, live server-log events, live task-log updates, and task completion events.
+- Updated `README.md` current status from polling-only logs to realtime WebSocket updates with REST fallback.
+- Verification: `go test ./...` passed, then `go mod tidy` normalized the new WebSocket dependency and `go test ./...` passed again. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` returned HTTP 401, and unauthenticated `/api/events` returned HTTP 401.
+- Started Phase 19 after reviewing the remaining MOD plan gap: `palworld_panel_plan.md` lists `POST /api/mods/:id/update` and UI operation "更新", while the current backend only updates implicitly when uploading an archive with an existing `PackageName`.
+- Added Phase 19 to `task_plan.md`: selected MOD update route, `PackageName` mismatch guard, backend tests, and per-MOD update upload UI.
+- Implemented `POST /api/mods/{id}/update`: it loads the selected MOD, accepts a multipart archive, parses `Info.json`, rejects mismatched `PackageName`, and then reuses the existing backup-guarded install/update flow so enabled state and folder name are preserved.
+- Added MOD update tests covering successful same-package update, enabled-state preservation, and mismatched-package rejection without changing the existing MOD record.
+- Wired the Vue MOD list with a per-row update button and hidden archive input that uploads to the selected MOD update endpoint, then refreshes MOD and backup lists.
+- Updated `README.md` current status with selected-package MOD update support.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` returned HTTP 401, and unauthenticated `/api/events` returned HTTP 401.
+- Resumed current plan for Phase 20. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified remaining safety gap: `palworld_panel_plan.md` requires second confirmation for dangerous operations, but the backend currently accepts those routes without an API-level confirmation guard.
+- Added Phase 20 to `task_plan.md`: require a confirmation header for server update/stop/restart, REST shutdown/stop, backup restore/delete, MOD update/delete; update frontend helpers and tests.
+- Implemented backend confirmation enforcement with `X-Palpanel-Confirm: true` and HTTP 428 for missing confirmation on server update/stop/restart, Palworld REST shutdown/stop, backup restore/delete, and MOD update/delete.
+- Updated backend tests so unconfirmed dangerous operations are rejected and confirmed requests continue to the existing behavior; covered JSON, DELETE, and multipart upload paths.
+- Updated Vue API helpers to send the confirmation header after UI confirmation, and added visible confirmation prompts for server update/restart/stop and MOD update alongside existing restore/delete prompts.
+- Updated `README.md` with the API-level confirmation rule.
+- Verification: `go test ./...` passed. `npm run build` passed with only the existing Vite large chunk warning.
+- Restarted local backend on `127.0.0.1:8080`; `/api/health` returned `{"status":"ok"}`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` and `/api/events` returned HTTP 401, and unauthenticated `POST /api/server/update` returned HTTP 401.
+- Final line-number checks confirmed backend confirmation enforcement, frontend confirmation headers, and test coverage. Two PowerShell search syntax errors during the check were recorded in `task_plan.md`.
+- Resumed current plan for Phase 21. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified remaining observability gap: the project plan says backup/restore and other long operations should have task logs and final status, while current `tasks` records cover SteamCMD and automatic backups but not manual backup, restore/delete, or MOD mutations.
+- Added Phase 21 to `task_plan.md`: record synchronous backup and MOD mutation APIs as tasks while preserving existing API responses.
+- Implemented Phase 21 operation task records with a shared `runOperationTask` helper: manual backups, backup restore/delete, and MOD upload/update/enable/disable/delete now create task rows, append start/detail/failure/completion logs, finish with `success` or `failed`, and reuse the existing realtime task broadcast path.
+- Added focused backend test assertions for `backup_manual`, `backup_restore`, `backup_delete`, `mod_upload`, `mod_update`, `mod_enable`, `mod_disable`, and `mod_delete`, including a failed MOD update mismatch task.
+- Updated `README.md` current status with backup and MOD mutation task observability.
+- Verification: `go test ./...` passed. `npm run build` passed with only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` returned HTTP 401, and unauthenticated `/api/events` returned HTTP 401.
+- Resumed current plan after Phase 21. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified the next remaining MOD plan gap: `palworld_panel_plan.md` lists MOD operation `打开目录`, while the current backend exposes install paths but has no authenticated safe directory-open action.
+- Added Phase 22 to `task_plan.md`: safe backend-mediated MOD install directory opener, constrained under the configured PalServer root, with frontend row action and focused tests.
+- Implemented `POST /api/mods/{id}/open-dir`: it resolves the selected MOD's install directory under `Mods/Workshop`, rejects invalid persisted folder names and path escapes, verifies the target is an existing directory, then invokes a platform-specific opener through an injectable backend function without shell interpolation.
+- Added backend tests covering the successful open-dir path passed to the opener and rejection of an escaping persisted folder name before the opener is called.
+- Wired the Vue MOD table with a `目录` button and `FolderOpen` icon that calls the new route and reports the server-side path.
+- Updated `README.md` current status with the MOD install-directory opener.
+- Verification: `go test ./...` passed. `npm run build` passed with only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` and `/api/events` returned HTTP 401, and unauthenticated `POST /api/mods/1/open-dir` returned HTTP 401.
+- Resumed current plan after Phase 22. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified the next safety gap: `server_update` currently starts SteamCMD while a panel-managed PalServer process may still be running, even though update guidance and the product safety model imply stopping before mutating server files.
+- Added Phase 23 to `task_plan.md`: safe server update lifecycle with stop-before-update, restart-on-success, no restart after failed update, and focused tests.
+- Implemented Phase 23 backend lifecycle handling: `server_update` captures whether PalServer is panel-managed and running, logs the update lifecycle, stops the server before invoking SteamCMD, restarts it after a successful update, and leaves it stopped if SteamCMD fails.
+- Added focused backend tests using injected lifecycle hooks to verify stop-before-SteamCMD, restart-after-success, and no restart after SteamCMD failure.
+- Fixed a transient SQLite busy race in the new async task polling test helper by retrying temporary `getTask` errors until the helper deadline.
+- Updated `README.md` current status with update stop/restart behavior.
+- Verification: `go test ./...` passed after the test-helper retry fix. `npm run build` passed with only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` and `/api/events` returned HTTP 401, and unauthenticated `POST /api/server/update` returned HTTP 401.
+- Resumed current plan after Phase 23. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified the next REST API gap: `palworld_panel_plan.md` and `findings.md` list official Palworld REST `GET /settings`, while the current backend proxies info/metrics/players/actions but does not expose runtime settings.
+- Added Phase 24 to `task_plan.md`: backend-proxied REST settings read, dashboard/UI settings snapshot, stable response shapes, and focused tests.
+- Implemented Phase 24 backend support: dashboard payloads now include a non-null `settings` map from Palworld REST `/settings`, and `GET /api/server/rest-settings` proxies the same runtime settings through the panel backend with existing Basic Auth handling.
+- Extended Palworld REST proxy tests to verify `/settings` Basic Auth forwarding, dashboard settings serialization, and the new authenticated backend route.
+- Wired the Vue dashboard to display runtime REST settings values for REST enabled, REST port, RCON enabled, and log format.
+- Updated `README.md` current status with runtime REST settings support.
+- Verification: `go test ./...` passed. `npm run build` passed with only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` and `/api/events` returned HTTP 401, and unauthenticated `GET /api/server/rest-settings` returned HTTP 401.
+- Resumed current plan after Phase 24. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified the next MOD delete gap: `palworld_panel_plan.md` lists optional cleanup of `Mods/ManagedMods/<PackageName>`, and `findings.md` notes PalServer creates `ManagedMods/<PackageName>/InstallManifest.json`, while current `deleteMod` removes only `Mods/Workshop/<folder>`.
+- Added Phase 25 to `task_plan.md`: safe `ManagedMods` cleanup during MOD delete, with path constraints and focused tests.
+- Implemented Phase 25 MOD delete cleanup: `deleteMod` now validates the `ManagedMods/<PackageName>` target before destructive work, removes both the installed Workshop folder and the server-generated ManagedMods folder, and still deletes the SQLite MOD row only after filesystem cleanup succeeds.
+- Added focused backend tests proving normal delete removes `ManagedMods/<PackageName>/InstallManifest.json` and a persisted path-escaping package name is rejected before Workshop or outside paths are removed.
+- Updated `README.md` current status with `ManagedMods` cleanup.
+- Verification: `go test ./...` passed. `npm run build` passed with only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard` and `/api/events` returned HTTP 401, and unauthenticated `GET /api/mods` returned HTTP 401.
+- Resumed current plan after Phase 25. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Identified the next runtime safety gap: server status only reflects panel-managed `serverCmd` state, so externally started PalServer processes can be missed before start/update/restore operations that mutate server files.
+- Added Phase 26 to `task_plan.md`: external PalServer runtime detection, managed/external status fields, unsafe-operation guards, UI status copy, and focused backend tests.
+- Implemented Phase 26 backend runtime state: `GET /api/server/status` now reports `managed_running`, `external_running`, and compatible combined `running`; status and WebSocket snapshots use the combined runtime state.
+- Added best-effort configured PalServer process detection: Linux scans `/proc` by executable/cmdline and Windows uses Toolhelp process snapshots plus full process image paths; unsupported platforms skip detection without failing operations.
+- Guarded server start, SteamCMD install/update task startup, and backup restore so they reject externally running PalServer processes with a conflict instead of mutating live files the panel cannot stop.
+- Added focused backend tests for external status reporting, start/update guards, and restore rejection without changing save files.
+- Updated the Vue status card to show `面板启动` versus `外部运行`, disable unsafe controls for external runtime state, and show a compact warning; updated README current status and build version examples.
+- Verification: `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard`, `/api/events`, and `/api/server/status` returned HTTP 401.
+- Resumed current plan after Phase 26. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited remaining gaps against the Chinese plan and current code. The clearest next UI/product gap is the v0.2 network setting "Game Port": the panel currently exposes only the raw `server_launch_args` textarea and the config-level `PublicPort`, but the actual listen port is an official startup argument (`-port`).
+- Added Phase 27 to `task_plan.md`: structured controls for common PalServer launch arguments while preserving raw custom arguments.
+- Implemented Phase 27 backend launch-argument summary fields on `/api/settings`: `game_port`, `launch_players`, `public_lobby`, `no_mods`, `performance_flags`, and `worker_threads` are parsed from `server_launch_args` without changing the stored raw string.
+- Added focused backend tests for launch-argument summary parsing, including complete/incomplete performance flag sets and raw custom argument preservation.
+- Wired the Vue basic settings card with structured launch controls for game port, launch player count, worker threads, public lobby, performance flags, and `-NoMods`; the raw launch-argument textarea remains available for advanced/custom flags.
+- Fixed a transient SQLite busy race observed during Phase 27 verification where `finishTask` could fail to persist a final task status after logging completion; task final-status updates now retry short-lived busy/locked errors.
+- Updated `README.md` current status and release-version examples for v1.9 structured launch argument controls.
+- Verification: `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, and `/api/settings` returned HTTP 401.
+- Resumed current plan after Phase 27. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited v0.2 advanced config coverage and found two Chinese-plan items still missing from the visual config editor: PvP and client MOD joins.
+- Checked official Palworld docs through Jina Reader. Configuration docs identify `bAllowClientMod`; PvP docs state enabling PvP requires `bIsPvP=True`, `bEnablePlayerToPlayerDamage=True`, and `bEnableDefenseOtherGuildPlayer=True`.
+- Added Phase 28 to `task_plan.md`: advanced config controls for client MOD joins and the three official PvP keys.
+- Implemented Phase 28 config support: `palConfigValues` now reads/writes `bAllowClientMod`, `bIsPvP`, `bEnablePlayerToPlayerDamage`, and `bEnableDefenseOtherGuildPlayer`; the default minimal config and known-key rendering list include those official keys while preserving unknown future settings.
+- Wired the Vue config advanced tab with switches for client MOD joins, PvP, player-to-player damage, and base defense against other guild players.
+- Updated frontend config types/defaults and README current status/release examples for v2.0 advanced config coverage.
+- Extended config tests so save/render coverage proves the new official keys are written and unknown fields are still preserved.
+- Verification: `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, and `/api/config` returned HTTP 401.
+- Resumed current plan after Phase 28. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited the implemented route and settings surface in `internal/app/app.go` and found `palworld_panel_plan.md` lagging behind recent implementation phases, especially auth/dashboard/events/tasks, runtime REST settings, REST shutdown/stop, MOD open-dir, app setting keys, and confirmation-header details.
+- Added Phase 29 to `task_plan.md`: synchronize the Chinese product plan's backend contract with the implemented API/settings surface.
+- Completed Phase 29 documentation sync: `palworld_panel_plan.md` now lists the current app settings keys, removes obsolete `admin_password_encrypted`, documents launch-argument derived fields, adds auth/dashboard/tasks/events/runtime-settings/shutdown/rest-stop/MOD open-dir routes, and aligns dangerous-operation confirmation and external-runtime guard rules with the backend.
+- Verification: `go test ./...` passed. `npm run build` passed with only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/rest-settings`, and `POST /api/mods/1/open-dir` returned HTTP 401.
+- Resumed current plan after Phase 29. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited the current config editor and confirmed it already covers `BaseCampMaxNum`, `BaseCampWorkerMaxNum`, `GuildPlayerMaxNum`, Pal spawn rate, PvP keys, and client MOD joins, but still lacks typed controls for official performance settings `BaseCampMaxNumInGuild`, `MaxBuildingLimitNum`, and `ServerReplicatePawnCullDistance`.
+- Checked the official configuration page through Jina Reader and recorded exact performance parameter details in `findings.md`.
+- Added Phase 30 to `task_plan.md`: visual controls and parser/writer coverage for the remaining performance-sensitive config fields.
+- Implemented Phase 30 config support: `palConfigValues` now reads/writes `BaseCampMaxNumInGuild`, `MaxBuildingLimitNum`, and `ServerReplicatePawnCullDistance`, includes them in known-key rendering and default minimal config, and applies conservative validation for official limits.
+- Wired the Vue config world tab with typed controls for per-guild base count, per-player building cap, and Pal sync distance; added matching TypeScript fields/defaults.
+- Updated README and `palworld_panel_plan.md` to describe world/performance config coverage.
+- Added backend tests for round-trip rendering of the new official keys and validation clamping for performance-sensitive limits.
+- Verification: `go test ./internal/app -run Config`, `go test ./...`, and `npm run build` passed. The frontend build produced only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/config`, and `/api/settings` returned HTTP 401.
+- Resumed current plan after Phase 30. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited backup restore lifecycle and found it already stops/restarts a panel-managed server and rejects external runtime when no panel-managed server is running, but it does not re-check for external PalServer after stopping a panel-managed server. In a mixed managed/external state, restore could mutate files while an external server remains running.
+- Added Phase 31 to `task_plan.md`: harden restore lifecycle external-runtime safety and add focused tests.
+- Implemented Phase 31 restore lifecycle hardening: backup restore now uses injectable managed-server stop/start helpers, re-checks for externally running PalServer after any managed stop and before extraction, and restarts only after successful extraction.
+- Added focused restore tests for stop-and-restart success and mixed managed/external runtime rejection without mutating changed save files.
+- Verification: `go test ./internal/app -run RestoreBackup`, `go test ./...`, and `npm run build` passed. The frontend build produced only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/backups`, `POST /api/backups/1/restore`, and `/api/settings` returned HTTP 401.
+- Resumed current plan after Phase 31. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited MOD mutation paths and found upload/update/enable/disable/delete still mutate `Mods/Workshop`, `Mods/ManagedMods`, or `PalModSettings.ini` without checking for an externally running configured PalServer.
+- Added Phase 32 to `task_plan.md`: MOD mutation runtime guard, focused no-mutation tests, and frontend stop-before-change/restart-required cues.
+- Implemented the Phase 32 backend guard: MOD upload/update/enable/disable/delete now reject while PalServer is running, including panel-managed and externally detected runtimes, before backups or MOD file/settings writes.
+- Added focused MOD tests covering managed-running upload rejection, external-running upload rejection, and external-running enable/disable/update/delete rejection without changing `PalModSettings.ini`, installed `Info.json`, or the MOD database row.
+- Wired the MOD card to disable mutation controls while PalServer is running, show stop-before-change and restart-required cues, and keep a local restart-needed alert after successful MOD changes until start/restart.
+- Updated README and `palworld_panel_plan.md` to document that MOD mutations require PalServer to be stopped and apply after the next start/restart.
+- First `go test ./...` verification failed in an existing server-update failure test because the task reached final status without the expected SteamCMD failure log line; added retry handling for transient SQLite busy errors in task log appends, matching the existing final-status retry behavior.
+- Verification after the task-log retry: `go test ./...` passed. `npm run build` passed with the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/mods`, `POST /api/mods/upload`, `POST /api/mods/1/enable`, `POST /api/mods/1/disable`, `POST /api/mods/1/update`, and `DELETE /api/mods/1` returned HTTP 401.
+- Resumed current plan after Phase 32. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited remaining product-plan responsibilities and found the `system` module still lists port detection while current implementation covers CPU, memory, disk, paths, and runtime state but not local port availability.
+- Added Phase 33 to `task_plan.md`: best-effort diagnostics for configured game UDP, REST API TCP, and RCON TCP ports, with UI/docs/tests.
+- Implemented Phase 33 backend port diagnostics on `/api/server/status`: game UDP port from launch args/default, REST/RCON TCP ports from existing `PalWorldSettings.ini` when available, REST URL fallback when config is missing, and statuses for available, in-use, disabled, invalid, or unknown.
+- Added focused backend tests that occupy real temporary TCP/UDP ports to verify `in_use`, released ports to verify `available`, disabled config handling, and REST URL fallback.
+- Wired the Vue detection card to display port diagnostics with Chinese labels and a running-server hint; updated README and `palworld_panel_plan.md` with the new status behavior.
+- Verification: `go test ./...` passed. `npm run build` passed with the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, and `/api/settings` returned HTTP 401.
+- Resumed current plan after Phase 33. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited the first-run experience and found the app only initializes the admin account before showing the full dashboard; it lacks the v0.6 Web setup guide that walks a self-use operator through paths, SteamCMD, install, config, backup, and optional REST API readiness.
+- Added Phase 34 to `task_plan.md`: first-run setup guide derived from existing status/settings/config/backup/REST state.
+- Implemented the Phase 34 Vue setup guide: after login it shows a status-derived checklist for saving paths, confirming SteamCMD, installing PalServer, initializing `PalWorldSettings.ini`, confirming backup settings, and optionally refreshing REST API readiness. Checklist actions reuse existing save/install/config/backup/REST operations and the guide disappears once required steps are complete.
+- Updated README and `palworld_panel_plan.md` to document the first-run guide behavior.
+- Verification: `go test ./...` passed. `npm run build` passed with the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, and `/api/settings` returned HTTP 401.
+- Resumed current plan after Phase 34. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited config save runtime semantics and found `PUT /api/config` creates a `pre_config` backup and writes `PalWorldSettings.ini` without checking for an externally running configured PalServer.
+- Added Phase 35 to `task_plan.md`: config runtime safety and restart cues, covering an external-runtime backend guard, no-mutation tests, frontend disabled save behavior, and documentation updates.
+- Implemented Phase 35 backend safety: config loading now rejects first-time `PalWorldSettings.ini` initialization when an external configured PalServer is running, and `PUT /api/config` rejects external runtime before creating `pre_config` backups or writing the INI.
+- Added config tests proving external-running save returns conflict without mutating the INI, creating backup records, or writing `.bak` files, and external-running initialization does not create the config file.
+- Wired the Vue config card and first-run checklist to disable config save/initialization during external runtime, while showing a restart-required cue when the server is panel-managed or a save returned `needs_restart`.
+- Updated README and `palworld_panel_plan.md` to document config initialization/save external-runtime protection.
+- Verification: `go test ./internal/app -run Config` passed, then `go test ./...` passed. `npm run build` passed with the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `/api/settings`, `GET /api/config`, and `PUT /api/config` returned HTTP 401.
+- Resumed current plan after Phase 35. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited SteamCMD task admission and found `startSteamCMDTask` creates a `pre_update` backup before checking `taskRunning`, so a rejected concurrent install/update request can still mutate backup state and trigger backup-side effects.
+- Added Phase 36 to `task_plan.md`: SteamCMD task admission and backup observability, covering single-flight-before-backup behavior, log-visible accepted backups, and focused backend tests.
+- Implemented Phase 36 SteamCMD lifecycle hardening: install/update now validates inputs and external runtime first, reserves the single running task before directory/backup side effects, then creates/logs the `pre_update` backup inside the accepted task before running SteamCMD.
+- Added focused tests proving a rejected concurrent SteamCMD task leaves backup state unchanged and an accepted SteamCMD task creates a `pre_update` backup with a task-log entry.
+- First `go test ./internal/app` verification failed with transient SQLite busy during backup metadata insertion from the accepted task; added the same short retry pattern already used for task logs/final status to backup record inserts.
+- Updated README current status to mention log-visible pre-operation backups for accepted SteamCMD tasks.
+- Verification after retry fix: `go test ./internal/app -run SteamCMDTask`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `/api/settings`, `/api/tasks`, `POST /api/server/install`, and `POST /api/server/update` returned HTTP 401.
+- Resumed current plan after Phase 36. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited the settings API contract and found `palworld_panel_plan.md` says structured launch fields are merged back into `server_launch_args` on save, while the backend currently persists only the submitted raw `server_launch_args` and relies on the Vue client to mutate it.
+- Added Phase 37 to `task_plan.md`: backend structured launch settings merge for `game_port`, `launch_players`, `public_lobby`, `no_mods`, `performance_flags`, and `worker_threads`, with unknown argument preservation and focused tests.
+- Implemented Phase 37 backend merge semantics: `PUT /api/settings` now folds structured launch fields into `server_launch_args`, replaces/removes existing known flags, preserves unknown custom arguments, and still preserves the existing REST API password when the request password is blank.
+- Added focused tests for launch-argument merging and the authenticated settings route, including custom argument preservation, disabled flag removal, derived response values, and REST password preservation.
+- The first focused test command failed because PowerShell parsed an unquoted `Launch|SettingsRoute` regex as a pipeline; re-ran it with the regex quoted and recorded the error in `task_plan.md`.
+- Updated README current status to document backend-side structured launch argument merging.
+- Verification: `go test ./internal/app -run 'Launch|SettingsRoute'`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced only the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `/api/settings`, `/api/tasks`, and `PUT /api/settings` returned HTTP 401.
+- Resumed current plan after Phase 37. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited server start admission and found `startServerProcess` creates a `startup` backup before rejecting an already panel-managed running PalServer, so a duplicate start can mutate backup state even though the start is refused.
+- Added Phase 38 to `task_plan.md`: server start admission and startup backup observability, covering duplicate-start and malformed-argument no-side-effect tests plus accepted startup backup creation.
+- Implemented Phase 38 backend hardening: `startServerProcess` now parses launch arguments and reserves a start admission slot before creating a `startup` backup, uses the exact start settings for backup creation, and rejects duplicate managed starts without backup side effects.
+- Added focused server-start tests proving duplicate managed starts and malformed launch arguments create no backups, while an admitted start attempt creates a `startup` backup record/file before process spawn.
+- Updated README and `palworld_panel_plan.md` to document that startup backups are created only for accepted start attempts after validation.
+- Verification: `go test ./internal/app -run 'ServerStart'`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `POST /api/server/start`, `/api/settings`, and `/api/tasks` returned HTTP 401.
+- Audited the restart route after Phase 38 and found `handleServerRestart` stops a panel-managed server before loading settings or validating that the next start can succeed, so malformed launch arguments or external-runtime conflicts can turn a rejected restart into an unnecessary stop.
+- Added Phase 39 to `task_plan.md`: restart preflight before stop, covering validation-before-stop behavior, injectable lifecycle tests, and documentation updates.
+- Implemented Phase 39 restart lifecycle hardening: restart now loads settings and runs the shared start preflight before any stop, then uses the existing managed stop/start lifecycle hooks for the accepted restart path.
+- Added route-level restart tests proving malformed launch arguments return before stop/start, external-runtime conflicts return before start, and accepted restarts stop before starting with the expected settings.
+- Updated README and `palworld_panel_plan.md` to document restart preflight-before-stop behavior.
+- Verification: `go test ./internal/app -run 'ServerRestart'`, `go test ./internal/app -run 'ServerStart'`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `POST /api/server/start`, `POST /api/server/restart`, `/api/settings`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 39. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited task admission and found only SteamCMD tasks reserve the shared `taskRunning` slot. Backup/MOD operation tasks and scheduled auto backups create task records directly, so concurrent local mutations can be accepted despite the UI's global active-task lock.
+- Added Phase 40 to `task_plan.md`: unify running-task admission across SteamCMD, backup/MOD operation tasks, and scheduled automatic backups.
+- Implemented Phase 40 task admission unification: added a shared `beginTask`/release guard, moved SteamCMD tasks and `runOperationTask` onto it, and made due automatic backups reserve the same running-task slot before creating an `auto_backup` task record.
+- Added focused backend tests proving rejected operation tasks create no task records, accepted operation tasks block SteamCMD admission, SteamCMD tasks block operation tasks, and automatic backups skip without backup/task side effects while another task is active.
+- Updated README and `palworld_panel_plan.md` to document the single backend running-task guard for SteamCMD, backup, restore/delete, MOD, and scheduled auto-backup operations.
+- Verification: `go test ./internal/app -run 'OperationTask|SteamCMDTask|AutoBackup'`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `POST /api/server/start`, `POST /api/server/restart`, `/api/settings`, `/api/tasks`, `POST /api/backups`, and `POST /api/mods/upload` returned HTTP 401.
+- Resumed current plan after Phase 40. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited Palworld REST player moderation routes and found kick/ban/unban still accept authenticated requests without the dangerous-operation confirmation header, even though these actions affect player sessions or ban state.
+- Added Phase 41 to `task_plan.md`: require backend confirmation for player moderation actions and update Vue controls/tests/docs accordingly.
+- Implemented Phase 41 backend confirmation enforcement: player kick, ban, and unban routes now require `X-Palpanel-Confirm: true` before parsing or proxying to Palworld REST.
+- Updated the Vue player controls so kick, ban, and unban all use confirmation prompts and send the confirmation header.
+- Added focused Palworld REST proxy tests proving unconfirmed moderation requests return 428 and confirmed requests still proxy with the correct Basic Auth and request bodies.
+- Updated README and `palworld_panel_plan.md` to document player moderation as a dangerous operation requiring UI confirmation plus the backend confirmation header.
+- Verification: `go test ./internal/app -run 'PalAPI|Confirmation'`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `/api/settings`, `/api/tasks`, `POST /api/players/test/kick`, `POST /api/players/test/ban`, and `POST /api/players/test/unban` returned HTTP 401.
+- Resumed current plan after Phase 41. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited config mutation paths and found `GET /api/config` initialization, `PUT /api/config`, and `POST /api/config/backup` can still create files/backups while another backend task is active, outside the shared running-operation guard added in Phase 40.
+- Added Phase 42 to `task_plan.md`: config mutation task admission for initialization/save/manual `.bak` backups plus matching UI active-task blocking.
+- Implemented Phase 42 backend admission: config initialization now reserves the shared task slot only when it would create `PalWorldSettings.ini`, while config saves and manual `.bak` backups reserve the slot before loading, backing up, or writing config files.
+- Added focused config tests proving active-task rejection leaves config files, backup records, and `.bak` files unchanged for initialization, save, and manual backup requests.
+- Wired the Vue config card and first-run setup guide to block config initialization, save, refresh-that-would-initialize, and manual `.bak` backup while another backend task is active, with separate warnings for external PalServer runtime and backend tasks.
+- Updated README and `palworld_panel_plan.md` to document that config initialization/save/manual `.bak` backups are file mutations guarded by the backend running-operation slot.
+- Verification: `go test ./internal/app -run 'Config'`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `/api/settings`, `/api/tasks`, `GET /api/config`, `PUT /api/config`, and `POST /api/config/backup` returned HTTP 401.
+- Audited the server start/restart paths after Phase 42 and found `startServerProcess` can still create a `startup` backup while another backend task is active because it only reserves `serverStarting`, not the shared running-task slot.
+- Added Phase 43 to `task_plan.md`: server start task admission for `POST /api/server/start` and restart's accepted start phase, with no-backup/no-start tests and documentation updates.
+- Implemented Phase 43 backend admission: public server starts reserve the shared running-task slot around startup backup/process spawn, restart reserves the slot before stopping a managed server, and task-owned update/restore restart paths use an admitted-start helper so they can still restart after successful operations.
+- Added focused tests proving active-task start rejection creates no `startup` backup or task record, and active-task restart rejection does not stop or start PalServer and creates no `startup` backup.
+- Updated README and `palworld_panel_plan.md` to document that server start/restart startup admission shares the backend running-task guard.
+- Verification: `go test ./internal/app -run 'ServerStart|ServerRestart|ServerUpdate|RestoreBackup'`, `go test ./internal/app`, `go test ./...`, and `npm run build` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `POST /api/server/start`, `POST /api/server/restart`, `/api/settings`, `/api/tasks`, `GET /api/config`, `PUT /api/config`, and `POST /api/config/backup` returned HTTP 401.
+- Resumed current plan after Phase 43. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited the Vue operation controls and found server start/restart plus manual backup/restore/delete could still be clicked while `activeTask` is true, relying on backend conflicts instead of matching the UI's active-task lock model.
+- Added Phase 44 to `task_plan.md`: frontend active-task lock consistency for start/restart and backup mutations, while keeping read-only refresh actions available.
+- Implemented Phase 44 UI alignment: server start/restart buttons and stale handler paths now block during an active backend task, backup create/restore/delete buttons and handlers use a shared active-task guard, and the first-run setup guide disables its manual-backup action while a task is running.
+- Verification: `npm run build` passed with the expected Vite large chunk warning, and `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/server/status`, `POST /api/server/start`, `POST /api/server/restart`, `/api/backups`, `POST /api/backups`, `/api/settings`, and `/api/tasks` returned HTTP 401.
+- Audited the MOD page after Phase 44 and found MOD upload/update/enable/disable/delete still only considered PalServer runtime state, not `activeTask`, even though backend MOD mutations share the running-task guard.
+- Added Phase 45 to `task_plan.md`: MOD active-task UI lock for mutation controls, preserving read-only refresh/info/open-directory actions.
+- Implemented Phase 45 UI alignment: MOD upload/update/enable/disable/delete now disable during active backend tasks, row mutation buttons also block while another MOD action is busy, and the shared mutation guard shows a task-specific warning before any upload or mutation request is sent.
+- Verification: `npm run build` passed with the expected Vite large chunk warning, and `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `/api/mods`, `POST /api/mods/upload`, `POST /api/mods/1/enable`, `POST /api/mods/1/disable`, `POST /api/mods/1/update`, `DELETE /api/mods/1`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 45. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited `PUT /api/settings` and found settings saves can still race active backend operations and can change `pal_server_path` away from a currently running configured PalServer, weakening subsequent runtime/file-mutation guards.
+- Added Phase 46 to `task_plan.md`: settings save task admission and runtime retarget safety.
+- Implemented Phase 46 backend safety: `PUT /api/settings` now reserves the shared running-operation slot before writing SQLite settings, rejects active-task saves without mutation, and refuses to change `pal_server_path` away from a running previously configured PalServer.
+- Added focused settings route tests proving active-task and external-running retarget rejections return conflict and leave existing SQLite settings unchanged.
+- Updated the Vue settings form and setup-guide save actions to disable and locally guard settings saves while a backend task is active or while the PalServer path draft retargets a running configured server.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions to document settings-save admission and `pal_server_path` retarget safety.
+- Verification: `go test ./internal/app -run 'SettingsRoute|Launch'`, `go test ./...`, and `npm run build` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `GET /api/settings`, `PUT /api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 46. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited runtime action controls and found Palworld REST write buttons plus panel-managed stop can still be clicked while another backend operation or REST action is active, even though these clicks can fail or interfere with accepted update/restore/restart lifecycles.
+- Added Phase 47 to `task_plan.md`: runtime action UI admission for Palworld REST writes and local server stop while preserving read-only refresh behavior and backend API compatibility.
+- Implemented Phase 47 UI admission: Palworld REST write buttons now disable when REST/runtime state is unavailable, another REST action is in flight, or a backend task is active; all REST write handlers share the same stale-click guard; panel-managed stop now disables and locally guards while a backend task is active.
+- Updated README and `palworld_panel_plan.md` to document runtime REST action UI locking and the active-task stop guard.
+- Verification: `npm run build` passed with the expected Vite large chunk warning, and `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `GET /api/settings`, `PUT /api/settings`, `/api/server/status`, `POST /api/server/stop`, `POST /api/server/announce`, `POST /api/server/rest-stop`, and `/api/tasks` returned HTTP 401.
+- Audited settings retarget safety coverage after Phase 47 and found the route-level tests prove active-task rejection and external-running retarget rejection, while the panel-managed running retarget path is only covered by implementation logic.
+- Added Phase 48 to `task_plan.md`: managed-running settings retarget regression coverage.
+- Added `TestSettingsRouteRejectsPalServerPathRetargetWhileManagedRunning`, proving `PUT /api/settings` rejects a PalServer path retarget while the configured server is panel-managed and running, skips external detection, and leaves existing settings unchanged.
+- Verification: `go test ./internal/app -run 'SettingsRoute|Launch'` passed, then `go test ./...` passed.
+- Resumed current plan after Phase 48. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited backend operation visibility and found the Vue `activeTask` state only reads persisted running task rows, while some guarded synchronous backend operations reserve `taskRunning` without creating task rows.
+- Added Phase 49 to `task_plan.md`: expose the shared operation slot through server status and make frontend active-operation locks consume that flag.
+- Implemented Phase 49 backend/UI contract: `/api/server/status` now includes `operation_running`, WebSocket snapshots include the same flag, Vue `activeTask` considers both status `operation_running` and persisted running task rows, and active-lock messages now refer to backend operations rather than only tasks.
+- Added focused tests for server status operation-slot reporting and WebSocket snapshot serialization.
+- Updated README and `palworld_panel_plan.md` to document the status flag and frontend active-operation rule.
+- Verification: `go test ./internal/app -run 'ServerStatus|RuntimeEvents'`, `npm run build`, and `go test ./...` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `GET /api/settings`, `PUT /api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 49. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited the realtime event route against the documented "authenticated same-origin WebSocket" contract and found tests cover unauthenticated rejection and event streaming but do not pin same-origin acceptance versus cross-origin rejection.
+- Added Phase 50 to `task_plan.md`: WebSocket same-origin regression coverage for `/api/events`.
+- Made the `/api/events` accept options explicit while preserving the WebSocket library's default same-origin origin verification.
+- Extended the runtime event test to reject an authenticated cross-origin WebSocket attempt with 403 while accepting an authenticated same-origin connection and preserving snapshot/log/task stream checks.
+- Updated README to mention WebSocket origin verification.
+- Verification: `go test ./internal/app -run 'RuntimeEvents'` passed, then `go test ./...` passed.
+- Audited `PUT /api/settings` persistence and found it writes multiple `app_settings` rows sequentially without an explicit transaction, so a mid-save SQLite error could leave mixed old/new settings.
+- Added Phase 51 to `task_plan.md`: settings save atomicity with a rollback regression test.
+- Implemented Phase 51 backend hardening: `PUT /api/settings` now writes all app settings rows inside one SQLite transaction using a deterministic key order.
+- Added `TestSettingsRouteRollsBackAllChangesOnDatabaseError`, using a SQLite trigger to force a mid-save failure and prove prior settings remain unchanged.
+- Updated README and `palworld_panel_plan.md` to document atomic settings saves.
+- Verification: `go test ./internal/app -run 'SettingsRoute|Launch'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with app HTML, and unauthenticated `/api/dashboard`, `/api/events`, `GET /api/settings`, `PUT /api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 51. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited realtime operation visibility and found `/api/server/status` and WebSocket snapshots include `operation_running`, but acquiring/releasing the shared running-operation slot does not broadcast live events, so short guarded operations can leave the UI relying on polling.
+- Added Phase 52 to `task_plan.md`: realtime operation-slot WebSocket events, frontend event consumption, docs, and backend regression coverage.
+- Implemented Phase 52 backend realtime visibility: shared running-operation slot reservation and release now broadcast `operation` WebSocket events with `operation_running=true/false`.
+- Updated the Vue runtime event consumer to apply `operation_running` from any runtime event and accept the new `operation` event type.
+- Added WebSocket regression coverage proving operation-slot true and false transitions are streamed after connection snapshot.
+- Updated README and `palworld_panel_plan.md` to document realtime operation-lock events.
+- Verification: `go test ./internal/app -run 'RuntimeEvents'`, `npm run build`, and `go test ./...` passed. The frontend build produced the expected Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued audit after Phase 52. Local file-mutation routes are covered by the running-operation guard, and Palworld REST write routes intentionally retain backend API availability while the UI blocks them during active backend/REST operations.
+- Found a dashboard responsiveness gap: `handleDashboard` fetches Palworld REST `/info`, `/metrics`, `/settings`, and `/players` sequentially, so slow or failing REST calls can accumulate multiple client timeouts before the panel response returns.
+- Added Phase 53 to `task_plan.md`: concurrent Palworld REST dashboard fan-out while preserving partial response behavior.
+- Implemented Phase 53 backend fan-out: `/api/dashboard` now requests Palworld REST info, metrics, runtime settings, and players concurrently and then applies the existing available/partial-error response shaping.
+- Added `TestDashboardFetchesPalRESTEndpointsConcurrently`, using a slow fake Palworld REST server to prove dashboard endpoint calls overlap while preserving successful aggregation.
+- Updated README and `palworld_panel_plan.md` to document concurrent REST dashboard aggregation.
+- Verification: `go test ./internal/app -run 'PalAPI|Dashboard'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued lifecycle audit after Phase 53. `cmd/palpanel` uses bare `http.ListenAndServe`, so service stop/SIGTERM has no graceful HTTP shutdown path and does not deliberately run `App.Close` cleanup before process exit.
+- Added Phase 54 to `task_plan.md`: production entrypoint signal handling and graceful `http.Server.Shutdown`.
+- Implemented Phase 54 entrypoint lifecycle handling: `cmd/palpanel` now runs through `run()`, starts an explicit `http.Server`, handles SIGINT/SIGTERM with a 10-second graceful shutdown, and ensures `App.Close` runs before returning errors.
+- Updated README and `palworld_panel_plan.md` to document graceful process shutdown.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 54. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited app shutdown internals and found `App.Close` closes `stopCh` and then SQLite immediately without waiting for the automatic backup scheduler goroutine; if shutdown happens during scheduler work, DB close can race the background path.
+- Added Phase 55 to `task_plan.md`: app-owned background goroutine shutdown wait before closing SQLite.
+- Implemented Phase 55 lifecycle hardening: `App` now tracks app-owned background goroutines with a `sync.WaitGroup`, the automatic backup scheduler starts through that helper, and `App.Close` closes `stopCh`, waits for the background group, then closes SQLite.
+- Added `TestAppCloseWaitsForBackgroundWorkersBeforeClosingDatabase`, proving `Close` blocks until a background worker exits and the database remains open while that worker unwinds.
+- Updated README and `palworld_panel_plan.md` to document graceful shutdown waiting for background tasks before closing SQLite.
+- Verification: `go test ./internal/app -run 'AppClose'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued browser-security audit after Phase 55. WebSocket `/api/events` pins same-origin behavior, but normal REST write routes do not currently reject authenticated cross-origin browser requests that carry an `Origin` header.
+- Added Phase 56 to `task_plan.md`: unsafe REST method origin guard while preserving same-origin browser requests and non-browser clients without `Origin`.
+- Implemented Phase 56 REST origin hardening: `securityHeaders` now rejects cross-origin `Origin` headers for unsafe methods (`POST`, `PUT`, `PATCH`, `DELETE`) before routing, while allowing same-origin browser requests and no-`Origin` local clients.
+- Added `TestUnsafeRESTRequestsRejectCrossOriginOrigin`, proving cross-origin unsafe REST requests return 403, same-origin unsafe requests still reach the route, and cross-origin safe GET requests are not blocked by the unsafe-method guard.
+- Updated README and `palworld_panel_plan.md` to document the unsafe REST same-origin contract.
+- Verification: `go test ./internal/app -run 'UnsafeREST|ServerControlRoutes|RuntimeEvents'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 56. Re-read `task_plan.md`, `progress.md`, `findings.md`, and `palworld_panel_plan.md`; session catchup produced no unsynced context.
+- Audited the HTTP/auth boundary after the unsafe REST origin guard and found session cookies are `HttpOnly` and `SameSite=Lax`, but are never marked `Secure` when the panel is served through HTTPS or a trusted reverse proxy.
+- Added Phase 57 to `task_plan.md`: HTTPS-aware session cookies for setup/login/logout, focused route tests, and documentation of the reverse-proxy cookie contract.
+- Implemented Phase 57 session-cookie hardening: setup/login/logout now use a shared session cookie helper, keep `HttpOnly` and `SameSite=Lax`, preserve non-`Secure` cookies for local HTTP, and set `Secure` when the request is HTTPS or `X-Forwarded-Proto: https`.
+- Added focused route tests proving local HTTP cookies are not `Secure`, reverse-proxy HTTPS cookies are `Secure`, and real HTTPS setup/login/logout cookies carry the expected attributes.
+- Updated README and `palworld_panel_plan.md` to document HTTPS-aware secure session cookies and the trusted reverse-proxy `X-Forwarded-Proto` requirement.
+- Verification: `go test ./internal/app -run 'SessionCookie|UnsafeREST|ServerControlRoutes|RuntimeEvents'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued lifecycle audit after Phase 57. `/api/events` handlers listen for `App.Close` through `stopCh`, but there is no focused regression test proving active WebSocket clients receive shutdown close and unregister from the app event-client map.
+- Added Phase 58 to `task_plan.md`: WebSocket shutdown regression coverage for close signaling and client unregistration.
+- Added `TestRuntimeEventsCloseAndUnsubscribeOnAppShutdown`, proving an authenticated `/api/events` client receives `StatusGoingAway` after `App.Close` and the event-client registry returns to zero.
+- Verification: `go test ./internal/app -run 'RuntimeEvents'` passed, then `go test ./...` passed.
+- Continued lifecycle/auth audit after Phase 58. The managed PalServer process behavior matches the current product plan, which promises panel resource cleanup on SIGINT/SIGTERM but does not require stopping PalServer on panel shutdown.
+- Hit a repeated PowerShell glob-path issue while searching `internal/app/server*`; recorded the error in `task_plan.md` and will use `-g` filters or direct reads.
+- Found a concrete first-run auth race: `POST /api/auth/setup` checks `hasUsers` before insert, but concurrent setup requests could both pass that check and create more than one admin because the single-admin rule is not enforced in the insert path.
+- Added Phase 59 to `task_plan.md`: atomic first-run setup with concurrency regression coverage.
+- Implemented Phase 59 auth hardening: setup still rejects already-initialized apps early, but now re-checks inside a setup-specific backend lock immediately before inserting the admin user.
+- Added `TestSetupRouteCreatesOnlyOneAdminUnderConcurrency`, proving concurrent setup requests produce one `201 Created`, the remaining requests return `409 Conflict`, the `users` table has exactly one row, and the winning admin can still log in with the expected session cookie attributes.
+- Updated README and `palworld_panel_plan.md` to document race-safe single-admin setup.
+- Verification: `go test ./internal/app -run 'SetupRoute|SessionCookie'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 59. Re-read planning files and session catchup produced no unsynced context; no `Status: in_progress` entries were present.
+- Audited backup/restore path safety and found `restoreBackup` creates the configured `pal_server_path` directory with `os.MkdirAll` before checking for an externally running PalServer, creating a rejection-time filesystem side effect.
+- Added Phase 60 to `task_plan.md`: restore preflight ordering so external-runtime rejection happens before creating the server directory, protective backup, or restored files.
+- Implemented Phase 60 restore hardening: `restoreBackup` now performs the external-runtime safety check before creating the configured PalServer directory, while preserving the managed-stop then re-check sequence.
+- Added `TestRestoreBackupRejectsExternalServerBeforeCreatingServerDirectory`, proving external-runtime rejection leaves a missing `pal_server_path` uncreated and does not create a `pre_restore` protective backup.
+- Updated README and `palworld_panel_plan.md` to document restore rejection before file side effects.
+- Verification: `go test ./internal/app -run 'RestoreBackup|BackupRoutes'` passed, then `go test ./...` passed.
+- Continued MOD upload audit after Phase 60. `handleUploadMod` and `handleUpdateMod` call `ParseMultipartForm(512 << 20)`, but that value is only the in-memory multipart threshold; it does not enforce a true request-body limit and can still allow oversized uploads to spill to disk.
+- Added Phase 61 to `task_plan.md`: enforce a real MOD upload/update HTTP body limit with `http.MaxBytesReader`, multipart temp cleanup, and focused oversized-body parser coverage.
+- Implemented Phase 61 upload hardening: MOD upload/update now parse through a shared helper that wraps the request body in `http.MaxBytesReader`, keeps the intended 512 MiB limit, closes uploaded files, and removes multipart temporary files.
+- Added `TestParseModArchiveUploadRejectsOversizedBody`, using a small test limit to prove oversized multipart requests return `413 Request Entity Too Large` without constructing a huge archive.
+- First Phase 61 focused test run failed to compile because `handleUploadMod` reused `err` after replacing inline parsing with the helper; fixed it with a local `err :=` declaration and recorded the error in `task_plan.md`.
+- Updated README and `palworld_panel_plan.md` to document the 512 MiB MOD upload/update request-body limit.
+- Verification: `go test ./internal/app -run 'Mod|ParseModArchiveUpload'` passed, then `go test ./...` passed.
+- Continued MOD upload admission audit after Phase 61. Upload/update now have a real body limit, but handlers still parse multipart bodies before reserving the shared backend operation slot, so requests that should be rejected because another operation is active may still read and spool uploaded archives first.
+- Added Phase 62 to `task_plan.md`: reserve the operation slot before reading MOD upload/update request bodies and prove active-operation rejection leaves the body unread and creates no task.
+- Implemented Phase 62 upload admission hardening: MOD upload/update now reserve the shared operation slot before multipart parsing, then run accepted requests through an admitted task helper so existing task logs and final statuses are preserved without re-reserving the slot.
+- Added active-operation regression tests for upload and update using a counting request body, proving 409 rejection leaves the body unread and creates no task records.
+- Updated README and `palworld_panel_plan.md` to document admission before reading MOD upload/update bodies.
+- Verification: `go test ./internal/app -run 'Mod|ParseModArchiveUpload|OperationTask'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, `/api/tasks`, and `/api/mods` returned HTTP 401.
+- Resumed current plan after Phase 62. Re-read planning files and session catchup produced no unsynced context; no `Status: in_progress` entries were present.
+- Audited ordinary JSON API parsing after hardening multipart uploads and found `decodeJSON` still reads request bodies directly with `json.NewDecoder(r.Body)`, so JSON endpoints have no real request-body limit.
+- Added Phase 63 to `task_plan.md`: enforce a shared JSON request-body limit with `http.MaxBytesReader` and focused oversized-body coverage.
+- Implemented Phase 63 JSON body hardening: shared `decodeJSON` now wraps request bodies with `http.MaxBytesReader`, caps JSON payloads at 1 MiB, and maps oversized bodies to `413 Request Entity Too Large`.
+- Added `TestDecodeJSONRejectsOversizedBody`, proving oversized JSON is rejected without affecting the existing setup/session route tests.
+- Updated README and `palworld_panel_plan.md` to document the 1 MiB JSON API body limit.
+- Verification: `go test ./internal/app -run 'DecodeJSON|SetupRoute|SessionCookie'` passed, then `go test ./...` passed.
+- Continued JSON API parser audit after Phase 63 and found the shared decoder accepts the first JSON value and ignores any second JSON value in the same request body, because `json.Decoder.Decode` is only called once.
+- Added Phase 64 to `task_plan.md`: strict single-value JSON request bodies with trailing whitespace still allowed.
+- Resumed Phase 64 and fixed a partial-edit regression where `requireConfirmation` returned true after writing `412 confirmation required`.
+- Completed Phase 64 JSON parser hardening: shared `decodeJSON` now rejects a second JSON value after the first decoded value, while still accepting trailing whitespace.
+- Added `TestDecodeJSONRejectsTrailingJSONValue` and `TestDecodeJSONAllowsTrailingWhitespace`.
+- Updated README and `palworld_panel_plan.md` to document the single-JSON-value request-body rule.
+- Verification: `go test ./internal/app -run 'DecodeJSON|ServerControlRoutes|UnsafeREST'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued JSON API parser audit after Phase 64 and found Go's JSON decoder accepts duplicate object member names by silently applying the later value.
+- Added Phase 65 to `task_plan.md`: duplicate JSON object field rejection through the shared decoder while preserving size and single-value enforcement.
+- Implemented Phase 65 shared decoder hardening: JSON request bodies are read through the existing 1 MiB `http.MaxBytesReader`, token-validated for one value and duplicate object names, then unmarshaled into the target payload.
+- Added duplicate-field decoder tests for top-level and nested objects, plus a sibling-object control case that preserves legitimate repeated field names in different objects.
+- Updated README and `palworld_panel_plan.md` to document duplicate JSON object field rejection.
+- Verification: `go test ./internal/app -run 'DecodeJSON|SetupRoute|SessionCookie'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued JSON request-shape audit after Phase 65. The shared decoder's real API callers decode into structured request structs, while the frontend sends known typed fields; no current route intentionally accepts extensible request objects.
+- Hit an `rg` quoting error while searching for map/interface request bodies; reran with fixed-string searches.
+- Added Phase 66 to `task_plan.md`: reject unknown fields in structured JSON API request bodies through the shared decoder.
+- Implemented Phase 66 by enabling `DisallowUnknownFields` in the shared decoder after duplicate/single-value token validation and before applying the payload.
+- Added `TestDecodeJSONRejectsUnknownStructField`.
+- First Phase 66 focused test run failed because the assertion expected raw quotes inside a JSON-encoded error string; fixed the assertion to match stable substrings.
+- Updated README and `palworld_panel_plan.md` to document unknown JSON field rejection.
+- Verification: `go test ./internal/app -run 'DecodeJSON|SetupRoute|SessionCookie|SettingsRoute|ConfigRoutes|BackupRoutes|PalAPI|Dashboard'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued destructive-operation consistency audit after Phase 66 and found backup deletion/retention removes archive files before SQLite row deletion succeeds.
+- Added Phase 67 to `task_plan.md`: backup delete and retention pruning should keep archive files intact when database row deletion fails.
+- Implemented Phase 67 backup deletion hardening: manual backup delete and automatic retention pruning now delete the SQLite row inside a transaction before archive removal, rolling back the row delete if archive removal fails.
+- Added regression tests proving manual delete and retention pruning leave the archive file and row intact when SQLite rejects the row deletion.
+- Updated README and `palworld_panel_plan.md` to document backup delete/retention DB-file consistency.
+- Verification: `go test ./internal/app -run 'Backup|PruneAutomaticBackups|DeleteBackup'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued destructive-operation consistency audit after Phase 67 and found MOD deletion removes installed files and updates `PalModSettings.ini` before SQLite accepts the mod row deletion.
+- Added Phase 68 to `task_plan.md`: MOD delete should leave files/settings/row intact when database row deletion fails.
+- Implemented Phase 68 MOD deletion hardening: target paths are validated before backup, then the mod row is deleted inside a transaction before `PalModSettings.ini`, `Mods/Workshop`, or `Mods/ManagedMods` are mutated; the row delete rolls back if filesystem/settings mutation fails.
+- Added `TestDeleteModKeepsFilesSettingsAndRowWhenDatabaseDeleteFails`, proving a database delete failure leaves workshop files, managed mod files, settings, and the mod row intact.
+- First Phase 68 focused test runs failed to compile because the new assertion passed a string where `assertFileEqual` expected `[]byte`; fixed the fixture conversion.
+- Updated README and `palworld_panel_plan.md` to document MOD delete DB-file consistency.
+- Verification: `go test ./internal/app -run 'Mod|ParseModArchiveUpload|OperationTask'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued MOD DB/file consistency audit after Phase 68 and found upload/install/update replaces final `Mods/Workshop/<folder>` files before SQLite insert/update succeeds.
+- Added Phase 69 to `task_plan.md`: stage MOD files first and only replace final installed files after SQLite accepts the mod row insert/update.
+- Implemented Phase 69 MOD install/update consistency: uploads now copy extracted files to a staging directory under `Mods/Workshop`, write the mod row inside a transaction, then swap the staged directory into the final folder; existing installed files are moved aside and restored if the replacement move fails.
+- Added route-level regression tests proving a failed new MOD insert leaves no final workshop folder or mod row, and a failed existing MOD update leaves installed files plus row metadata unchanged.
+- Updated README and `palworld_panel_plan.md` to document staged MOD install/update replacement after database row acceptance.
+- Verification: `go test ./internal/app -run 'Mod|ParseModArchiveUpload|OperationTask'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued restore safety audit after Phase 69 and found restore extracts backup ZIP entries directly into the server directory, so a corrupt archive can fail after earlier entries have already overwritten files.
+- Added Phase 70 to `task_plan.md`: preflight backup ZIP paths and readability before restore side effects.
+- Implemented Phase 70 restore preflight: `restoreBackup` now validates every ZIP entry target path and reads every file entry before stopping a managed server, creating the server directory, creating a protective backup, or extracting files.
+- Added `TestRestoreBackupRejectsCorruptArchiveBeforeFileSideEffects`, using a ZIP with a bad stored-entry checksum to prove corrupt archives leave server files unchanged, do not stop the managed server, and do not create `pre_restore` backups.
+- Updated README and `palworld_panel_plan.md` to document restore archive preflight.
+- Verification: `go test ./internal/app -run 'RestoreBackup|BackupRoutes|ValidateZip|CorruptArchive'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued backup boundary audit after Phase 70 and found backup creation does not skip symlinks, so `os.Open` can follow a symlink inside the server directory and include content outside `pal_server_path`.
+- Confirmed symlink creation works in the local Windows environment, enabling a focused regression test.
+- Added Phase 71 to `task_plan.md`: backup creation skips symlinks and restore rejects ZIP symlink entries.
+- Implemented Phase 71 backup boundary hardening: `writeZipBackup` now skips filesystem symlink entries, while restore preflight/extraction rejects ZIP entries marked as symlinks.
+- Added `TestCreateBackupSkipsSymlinkEntries` and `TestRestoreBackupRejectsSymlinkEntryBeforeFileSideEffects`.
+- First Phase 71 focused test run failed to compile because the new test used `io.ReadAll` without importing `io`; added the missing import.
+- Updated README and `palworld_panel_plan.md` to document backup symlink handling.
+- Verification: `go test ./internal/app -run 'Backup|RestoreBackup|Symlink'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued MOD consistency audit after Phase 71 and found `setModEnabled` updates `PalModSettings.ini` before SQLite accepts the `mods.enabled` row update, so a failed database update can leave settings and persisted row state inconsistent.
+- Added Phase 72 to `task_plan.md`: MOD enable/disable DB/file consistency with focused database-failure regression coverage.
+- Implemented Phase 72 MOD enable/disable consistency: `setModEnabled` now updates `mods.enabled` inside a SQLite transaction before mutating `PalModSettings.ini`, rolling the row update back if the settings write fails.
+- Added `TestSetModEnabledKeepsSettingsAndRowWhenDatabaseUpdateFails`, covering failed enable and disable updates with a SQLite trigger and proving settings plus row state stay unchanged.
+- Updated README and `palworld_panel_plan.md` to document MOD enable/disable DB/settings consistency.
+- Verification: `go test ./internal/app -run 'Mod|ParseModArchiveUpload|OperationTask'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued config write-safety audit after Phase 72. `PUT /api/config` and fallback config initialization write `PalWorldSettings.ini` with direct `os.WriteFile`, and config `.bak` copies use a direct truncating target write, so a mid-write failure can leave a partial config or backup file.
+- Added Phase 73 to `task_plan.md`: atomic config file writes with same-directory temporary files, platform-safe replacement, and focused replacement-failure cleanup coverage.
+- Implemented Phase 73 config write hardening: added a same-directory atomic write helper, Windows `MoveFileEx` replacement support, and Unix `os.Rename` replacement support; config saves, default initialization, and config `.bak` copies now use the helper.
+- Added `TestAtomicWriteFileFailedReplaceKeepsOriginalAndRemovesTemp`, proving an injected replacement failure leaves the existing config file unchanged and removes the temporary file.
+- Updated README and `palworld_panel_plan.md` to document atomic config file replacement.
+- Verification: `go test ./internal/app -run 'Config|AtomicWrite|PalConfig'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued file-write safety audit after Phase 73 and found `updatePalModSettings` still writes `Mods/PalModSettings.ini` directly with `os.WriteFile`, so a mid-write failure can leave a partial MOD settings file even though the database update rolls back.
+- Added Phase 74 to `task_plan.md`: atomic MOD settings writes using the shared same-directory replacement helper.
+- Implemented Phase 74 MOD settings write hardening: `updatePalModSettings` now writes `Mods/PalModSettings.ini` through the shared atomic replacement helper.
+- Added `TestUpdatePalModSettingsFailedReplaceKeepsOriginalAndRemovesTemp`, proving an injected replacement failure leaves the original MOD settings file unchanged and removes the temporary file.
+- Updated README and `palworld_panel_plan.md` to document atomic `PalModSettings.ini` replacement.
+- Verification: `go test ./internal/app -run 'Mod|ParseModArchiveUpload|OperationTask|AtomicWrite'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued restore write-safety audit after Phase 74. Restore preflights ZIP readability, but `extractZipBackup` still opens each target with `O_TRUNC`, so a write or close failure during extraction can damage the target file currently being restored.
+- Added Phase 75 to `task_plan.md`: atomic per-file restore replacement with streaming temporary writes and focused replacement-failure coverage.
+- Implemented Phase 75 restore write hardening: added streaming support to the atomic write helper and changed restore extraction to write each file through same-directory temporary replacement instead of `O_TRUNC`.
+- Added `TestRestoreBackupReplacementFailureKeepsExistingFile`, proving an injected replacement failure leaves the existing restored target unchanged and removes the temporary file.
+- Updated README and `palworld_panel_plan.md` to document atomic per-file restore replacement.
+- Verification: `go test ./internal/app -run 'RestoreBackup|BackupRoutes|AtomicWrite'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued MOD archive safety audit after Phase 75. Native ZIP extraction did not reject symlink entries, and `findInfoJSON` could read a symlinked `Info.json` produced by an external extractor before `copyDir` later skipped symlinks.
+- Added Phase 76 to `task_plan.md`: MOD archive symlink safety for native ZIP extraction and extracted metadata discovery.
+- Implemented Phase 76 MOD archive hardening: native ZIP extraction now rejects symlink entries, and `findInfoJSON` skips symlinked paths before trusting uploaded metadata.
+- Added `TestExtractZipToDirRejectsSymlinkEntry` and `TestInspectExtractedModIgnoresSymlinkedInfoJSON`.
+- Updated README and `palworld_panel_plan.md` to document MOD upload symlink handling.
+- Verification: `go test ./internal/app -run 'Mod|ExtractZip|InfoJSON|ParseModArchiveUpload|OperationTask'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued MOD extraction safety audit after Phase 76. Native ZIP uploads reject symlink entries, but external 7z/RAR extraction can still leave symlinks in the extracted tree; current staging skips symlinks later instead of rejecting the upload before metadata trust.
+- Added Phase 77 to `task_plan.md`: reject any symlink found in the extracted MOD tree before metadata discovery or staging.
+- Implemented Phase 77 MOD extraction hardening: `installUploadedModForPackage` now validates the extracted MOD tree immediately after extraction and rejects any symlink before `Info.json` discovery or staging.
+- Added `TestValidateExtractedModTreeRejectsSymlink`.
+- Updated README and `palworld_panel_plan.md` to document extracted-tree symlink rejection for external extractor outputs.
+- Verification: `go test ./internal/app -run 'Mod|ExtractZip|InfoJSON|ValidateExtracted|ParseModArchiveUpload|OperationTask'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued external MOD extractor audit after Phase 77. Uploaded archives and extraction output currently use separate temp paths under `data/uploads`, so an external extractor that writes a sibling outside the intended extraction directory would not be rejected before metadata scanning.
+- Added Phase 78 to `task_plan.md`: operation-scoped MOD extraction workspace containment and boundary validation.
+- Implemented Phase 78 MOD extraction containment: upload/update now store the temporary archive and extracted content inside one operation-scoped workspace, and validate that extractor output stays under the intended `content` directory before metadata discovery.
+- Added `TestValidateExtractionWorkspaceRejectsSiblingOutput`.
+- First Phase 78 focused test failed to compile because `sameFilesystemPath` was redeclared; removed the duplicate helper and reused the existing shared helper.
+- Updated README and `palworld_panel_plan.md` to document operation-scoped MOD extraction workspace containment.
+- Verification: `go test ./internal/app -run 'Mod|ExtractZip|InfoJSON|ValidateExtracted|ValidateExtraction|ParseModArchiveUpload|OperationTask'` passed, then `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 78. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited the MOD install/update consistency path and found `installUploadedModForPackage` still replaces the final `Mods/Workshop/<folder>` directory before the SQLite transaction commits, so a commit failure can leave installed files newer than the accepted database row.
+- Added Phase 79 to `task_plan.md`: commit MOD insert/update transactions before final installed directory replacement, while preserving staging and replacement rollback behavior.
+- Implemented Phase 79 MOD install/update hardening: extracted files are still staged under `Mods/Workshop`, the MOD row insert/update commits before final directory replacement, and replacement/settings failures after commit compensate by restoring the previous database row state.
+- Added `TestModUpdateKeepsInstalledFilesWhenDatabaseCommitFails`, using an injected commit failure that rolls back the transaction before returning `commit blocked`, proving failed commits leave installed files and the persisted version unchanged.
+- First Phase 79 focused test used a deferred SQLite foreign-key violation to force `COMMIT` failure, but the same connection still observed version `2.0.0`; replaced that injection with the stable commit hook and recorded the error in `task_plan.md`.
+- Updated README and `palworld_panel_plan.md` to clarify that final MOD directory replacement happens after SQLite commit, and that replacement failure compensates database state.
+- Verification: `go test ./internal/app -run 'TestModUpdateKeepsInstalledFilesWhenDatabaseCommitFails' -count=1 -v` passed; `go test ./internal/app -run 'Mod|ParseModArchiveUpload|OperationTask'` passed; `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 79. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited MOD deletion consistency and found `deleteMod` deletes the SQLite row inside a transaction, then mutates `PalModSettings.ini` and removes `Mods/Workshop` / `Mods/ManagedMods` before commit; a later file-removal failure can roll the row delete back while leaving the settings file already disabled.
+- Added Phase 80 to `task_plan.md`: compensate MOD delete database/settings state when post-row-delete file or settings mutations fail.
+- Implemented Phase 80 MOD delete compensation: `deleteMod` now commits the SQLite row deletion before mutating `PalModSettings.ini` and installed directories, restores the deleted MOD row if later settings or directory removal fails, and restores `ActiveModList` when the MOD was previously enabled.
+- Added `TestDeleteModRestoresSettingsAndRowWhenDirectoryRemoveFails`, using an injected `removeModPath` failure to prove workshop files, managed files, active settings, and the mod row remain/restored after a directory deletion failure.
+- Updated README and `palworld_panel_plan.md` to document MOD delete compensation after post-commit settings or directory failures.
+- Verification: `go test ./internal/app -run 'TestDeleteModRestoresSettingsAndRowWhenDirectoryRemoveFails' -count=1 -v` passed; `go test ./internal/app -run 'Mod|ParseModArchiveUpload|OperationTask'` passed; `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 80. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited backup creation consistency and found `createBackupWithSettings` writes and renames the final `.zip` archive before inserting the SQLite backup row; if the row insert fails and cleanup also fails, an untracked final backup archive can remain under `data/backups`.
+- Added Phase 81 to `task_plan.md`: keep backup output temporary until SQLite metadata insertion is accepted, then finalize the archive and row together.
+- Implemented Phase 81 backup creation hardening: backup archives are now written to same-directory temporary files, metadata insert happens inside a SQLite transaction, final rename occurs before commit, rename failure rolls the row back, and commit failure removes the untracked final archive when possible.
+- Added `TestCreateBackupDoesNotCreateFinalArchiveWhenDatabaseInsertFails` and `TestCreateBackupRollsBackRowWhenFinalRenameFails`, covering insert failure with cleanup failure and final rename failure.
+- Updated README and `palworld_panel_plan.md` to document temporary archive finalization with SQLite metadata rollback.
+- Verification: `go test ./internal/app -run 'TestCreateBackupDoesNotCreateFinalArchiveWhenDatabaseInsertFails|TestCreateBackupRollsBackRowWhenFinalRenameFails' -count=1 -v` passed; `go test ./internal/app -run 'Backup|RestoreBackup|PruneAutomaticBackups|AutoBackup|AtomicWrite'` passed; `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed current plan after Phase 81. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited backup deletion consistency and found `deleteBackupRecord` deletes the SQLite row inside a transaction, removes the archive, and then commits; a commit failure after archive removal can leave a database row pointing at a missing backup file.
+- Added Phase 82 to `task_plan.md`: commit backup row deletion before archive removal, and compensate metadata if archive removal fails after commit.
+- Implemented Phase 82 backup delete hardening: `deleteBackupRecord` now commits the SQLite row deletion before removing the archive and restores the backup metadata row if archive removal fails after commit; automatic retention pruning uses the same full-record delete path.
+- Added focused backup delete/prune regression tests for commit failure preserving archive plus row, archive-removal failure restoring the row, and retention pruning restoring the row on archive-removal failure.
+- Updated README and `palworld_panel_plan.md` to document commit-before-archive-removal semantics and metadata restoration on archive deletion failure.
+- Verification: `go test ./internal/app -run 'DeleteBackup|PruneAutomaticBackups|Backup'` passed.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 82 complete in `task_plan.md`.
+- Continued post-Phase 82 consistency audit and found `setModEnabled` still writes `Mods/PalModSettings.ini` before the `mods.enabled` transaction commits, so a commit failure can leave settings changed while the row remains unchanged.
+- Added Phase 83 to `task_plan.md`: commit MOD enable/disable row updates before writing `PalModSettings.ini`, with compensation if the settings write fails after commit.
+- Implemented Phase 83 MOD enable/disable hardening: `mods.enabled` now commits before `PalModSettings.ini` is written, commit failure leaves settings unchanged, and settings-write failure restores the previous row enabled state and timestamp.
+- Added focused MOD enable/disable tests for commit failure preserving settings plus row, and settings-write failure restoring the row for both enable and disable paths.
+- Updated README and `palworld_panel_plan.md` to document commit-before-settings-write semantics for MOD enable/disable.
+- Verification: `go test ./internal/app -run 'SetModEnabled|UpdatePalModSettings|Mod'` passed.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 83 complete in `task_plan.md`.
+- Continued MOD delete compensation audit and found a partial-directory case: if `Mods/ManagedMods/<PackageName>` is removed successfully but later `Mods/Workshop/<folder>` removal fails, the row/settings compensation can restore metadata while managed files are already gone.
+- Added Phase 84 to `task_plan.md`: stage MOD delete directories under `Mods` before cleanup and restore staged directories if cleanup fails.
+- Implemented Phase 84 MOD delete directory staging: existing managed/workshop directories are renamed into a same-`Mods` deletion staging area before cleanup, and cleanup/staging failures restore any moved directories before the existing database/settings compensation runs.
+- Updated the MOD delete failure regression test to inject a cleanup failure after both directories have left their final paths, proving workshop and managed files are restored along with settings and row state.
+- Updated README and `palworld_panel_plan.md` to document staged MOD delete directory cleanup and restoration.
+- Verification: `go test ./internal/app -run 'DeleteMod|Mod'` passed.
+- First Phase 84 full verification hit transient `database is locked (SQLITE_BUSY)` in `TestSteamCMDTaskCreatesAndLogsPreUpdateBackup`; the focused test passed on rerun, and a subsequent `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 84 complete in `task_plan.md`.
+- Continued MOD install/update replacement audit and found `replaceInstalledModDir` ignores a failure while restoring the previous installed directory after a replacement rename failure, so callers can restore database state without seeing that previous files were not restored.
+- Added Phase 85 to `task_plan.md`: surface previous-directory restore failures from MOD directory replacement and cover them with injected rename failures.
+- Implemented Phase 85 MOD replacement error reporting: directory replacement now uses an injectable rename helper and returns a combined error if the new directory rename fails and restoring the previous directory also fails.
+- Added `TestReplaceInstalledModDirReportsPreviousRestoreFailure` to prove both the replacement failure and previous-directory restore failure are surfaced.
+- Updated README and `palworld_panel_plan.md` to document that MOD install/update must report previous-directory restore failures.
+- Verification: `go test ./internal/app -run 'ReplaceInstalledModDir|Mod'` passed.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 85 complete in `task_plan.md`.
+- Resumed current plan after Phase 85. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited task/backup SQLite busy handling after recent transient failures and found `appendTaskLog`/`finishTask` and backup inserts have local retries, but the app still uses the default multi-connection SQLite pool with no configured busy timeout.
+- Added Phase 86 to `task_plan.md`: constrain SQLite to one open connection and configure a busy timeout to reduce `SQLITE_BUSY` across background tasks and API requests.
+- Recorded another PowerShell glob-path search mistake from using `internal/app/*_test.go`; future searches should use `rg ... internal/app -g '*_test.go'`.
+- Implemented Phase 86 SQLite busy handling: `New` now configures SQLite with one open/idle connection and `PRAGMA busy_timeout = 5000`.
+- Added `TestNewConfiguresSQLiteBusyHandling` to prove the connection limit and busy timeout are applied.
+- Updated README and `palworld_panel_plan.md` to document the SQLite single-connection/busy-timeout rule.
+- Verification: `go test ./internal/app -run 'TestNewConfiguresSQLiteBusyHandling|SetupRoute'` passed.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 86 complete in `task_plan.md`.
+- Resumed current plan after Phase 86. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited frontend server operation admission and found `runServerAction` only checked the active backend operation state, while the buttons also disabled external runtime conflicts, missing PalServer binaries, duplicate starts, non-panel-managed stops, and in-flight server actions.
+- Added Phase 87 to `task_plan.md`: frontend server action local guard consistency.
+- Implemented Phase 87 frontend guard consistency: server action buttons now call `serverActionBlocked(action)`, the first-run setup install step reuses the same server-action guard, and `runServerAction` blocks locally with specific operator-facing reasons before sending invalid requests.
+- Updated README and `palworld_panel_plan.md` to document that server operation buttons, setup actions, and direct click handlers share the same local admission logic.
+- Recorded a PowerShell path mistake from reading `web\package.json` while already in the `web` working directory; re-read the file from the correct path.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 87 complete in `task_plan.md`.
+- Resumed current plan after Phase 87. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited MOD upload resource handling and found `parseModArchiveUpload` used the 512 MiB hard request cap as the `ParseMultipartForm` in-memory threshold, allowing large archives to be cached in memory before spilling.
+- Added Phase 88 to `task_plan.md`: MOD multipart memory threshold.
+- Implemented Phase 88 upload parsing hardening: MOD upload/update still use the 512 MiB `MaxBytesReader` body cap, but multipart parsing now uses a 32 MiB memory threshold and spills larger archive parts to temporary files.
+- Added `TestParseModArchiveUploadSpillsLargePartToTempFile`, proving a part larger than the memory threshold but under the hard cap is accepted and returned as a temp-file-backed multipart file.
+- Updated README and `palworld_panel_plan.md` to distinguish the MOD upload hard body limit from the smaller multipart memory threshold.
+- Verification: `go test ./internal/app -run 'TestParseModArchiveUploadRejectsOversizedBody|TestParseModArchiveUploadSpillsLargePartToTempFile' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Continued the Linux Docker/Compose deployment follow-up after Phase 117. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and recorded the missing Phase 117 Linux amd64 CGO-disabled cross-build verification.
+- Added Phase 118 to `task_plan.md`: v3.79 Compose environment example.
+- Added `.env.example` covering `PALPANEL_VERSION`, `PALPANEL_PORT`, `PALPANEL_DATA_DIR`, `PALPANEL_SERVER_DIR`, `PALPANEL_UID`, `PALPANEL_GID`, and `TZ`; updated `.gitignore` so local `.env` overrides are ignored while `.env.example` remains tracked.
+- Updated `README.md` with the copy/edit `.env` workflow, `docker compose --env-file .env -f deploy/compose.yaml up -d --build`, and guidance for relative example paths versus absolute production bind mounts.
+- Updated `palworld_panel_plan.md` and `task_plan.md` decisions with the Compose env-file deployment contract.
+- Verification: static Compose variable coverage check passed for every `${...}` reference in `deploy/compose.yaml`.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend from `.tmp/palpanel-phase118.exe` on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 118 complete in `task_plan.md`.
+- Continued the Docker deployment audit after Phase 118. Found the Compose image mounted `/palserver` but did not include SteamCMD, while the backend install/update flow already resolves `steamcmd` from `PATH` when `steamcmd_path` is empty.
+- Added Phase 119 to `task_plan.md`: v3.80 Docker SteamCMD runtime tooling.
+- Updated `Dockerfile` so the runtime stage is guarded to Linux amd64, installs SteamCMD runtime dependencies, downloads Valve's SteamCMD archive into `/opt/steamcmd`, exposes `/usr/local/bin/steamcmd` as a wrapper, and keeps `/opt/steamcmd` writable by the non-root `palpanel` user.
+- Updated `README.md` and `palworld_panel_plan.md` to document that the Compose image includes SteamCMD at `/usr/local/bin/steamcmd`, that `steamcmd_path` can remain empty in the container, and that the image currently targets Linux amd64.
+- Verification: static Dockerfile marker check passed for the amd64 guard, SteamCMD dependencies, download URL, wrapper path, wrapper command, and non-root ownership.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend from `.tmp/palpanel-phase119.exe` on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 119 complete in `task_plan.md`.
+- Continued the Compose deployment networking audit after Phase 119. Found the Compose service published the panel port but not the Palworld game UDP port, so a PalServer process started inside the container would not be reachable by players.
+- Added Phase 120 to `task_plan.md`: v3.81 Compose Palworld game port exposure.
+- Updated `deploy/compose.yaml` to publish `${PALWORLD_GAME_HOST_PORT:-8211}:${PALWORLD_GAME_PORT:-8211}/udp` while keeping the panel bound to `127.0.0.1`.
+- Updated `.env.example`, `README.md`, and `palworld_panel_plan.md` with the game UDP port variables and documented that Palworld REST/RCON ports remain unpublished by default and should be accessed through the panel backend.
+- Updated `task_plan.md` decisions with the Compose networking contract.
+- Verification: static Compose variable coverage check passed for every `${...}` reference in `deploy/compose.yaml`, including `PALWORLD_GAME_HOST_PORT` and `PALWORLD_GAME_PORT`.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend from `.tmp/palpanel-phase120.exe` on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 120 complete in `task_plan.md`.
+- Continued the Docker runtime audit after Phase 120. Found SteamCMD mutable state was under `/opt/steamcmd`, which could fail when Compose runs the container with a custom `PALPANEL_UID`/`PALPANEL_GID` because that runtime user may not be able to write SteamCMD self-update/cache files.
+- Added Phase 121 to `task_plan.md`: v3.82 Docker SteamCMD writable state.
+- Updated `Dockerfile` so the image keeps only the SteamCMD installer archive under `/usr/local/share/steamcmd`, and `/usr/local/bin/steamcmd` extracts/uses `${PALPANEL_STEAMCMD_DIR:-/data/steamcmd}` at runtime.
+- Updated `deploy/compose.yaml`, `.env.example`, `README.md`, and `palworld_panel_plan.md` with `PALPANEL_STEAMCMD_DIR=/data/steamcmd` and the data-volume SteamCMD state contract.
+- Updated `task_plan.md` decisions with the Docker SteamCMD mutable-state contract.
+- Verification: static Dockerfile wrapper check passed for the read-only archive path, `/data/steamcmd` default, runtime extraction, wrapper execution, and removal of `/opt/steamcmd` references.
+- Verification: static Compose variable coverage check passed for every `${...}` reference in `deploy/compose.yaml`, including `PALPANEL_STEAMCMD_DIR`.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend from `.tmp/palpanel-phase121.exe` on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 121 complete in `task_plan.md`.
+- Continued the Docker first-run audit after Phase 121. Found Compose advertised `/palserver`, but a fresh database still persisted an empty `pal_server_path`, and SteamCMD install/update require the persisted setting rather than the detected status path.
+- Added Phase 122 to `task_plan.md`: v3.83 Docker default PalServer path.
+- Updated `internal/app/app.go` so fresh databases seed `pal_server_path` from `PALPANEL_DEFAULT_PAL_SERVER_PATH`, preserving `INSERT OR IGNORE` behavior so existing saved settings are not overwritten on restart.
+- Added focused backend tests proving the env default is trimmed and persisted for a fresh database, and proving a later restart with a different env default does not overwrite the saved path. Existing `PALPANEL_PAL_SERVER_PATH` status detection still remains detected-but-not-configured.
+- Updated `Dockerfile`, `deploy/compose.yaml`, `.env.example`, `README.md`, and `palworld_panel_plan.md` so Docker/Compose defaults `PALPANEL_DEFAULT_PAL_SERVER_PATH=/palserver` and documents the one-time seed behavior.
+- Updated `task_plan.md` decisions with the Docker first-run default path contract.
+- Verification: `go test ./internal/app -run 'TestNewSeedsDefaultPalServerPathFromEnvironment|TestNewDoesNotOverwritePersistedPalServerPathFromEnvironment|TestCurrentServerStatusDetectsPalServerFromEnv' -count=1 -v` passed.
+- Verification: static Compose variable coverage check passed for every `${...}` reference in `deploy/compose.yaml`, including `PALPANEL_DEFAULT_PAL_SERVER_PATH`.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend from `.tmp/palpanel-phase122.exe` on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 122 complete in `task_plan.md`.
+- Marked Phase 88 complete in `task_plan.md`.
+- Resumed current plan after Phase 88. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited config mutation admission and found `POST /api/config/backup` created manual `.bak` config backups without checking for an externally running PalServer, even though config initialization/save already reject that runtime state.
+- Added Phase 89 to `task_plan.md`: config backup external runtime admission.
+- Implemented Phase 89 backend admission: `handleConfigBackup` now loads settings, rejects externally running PalServer before reserving the operation slot or loading/creating config files, and then uses the same settings snapshot for config loading.
+- Updated the Vue config backup button and handler to use the same local config mutation guard as config save, so external PalServer and active backend operations block manual `.bak` backups before the API call.
+- Added `TestConfigBackupRejectsExternalServerWithoutBak`, proving a rejected config backup while an external PalServer is detected does not create `.bak` files or task records.
+- Updated `palworld_panel_plan.md` to explicitly include manual config `.bak` backups in the external-runtime rejection rule.
+- Verification: `go test ./internal/app -run 'TestConfigBackupRejectsRunningTaskWithoutBak|TestConfigBackupRejectsExternalServerWithoutBak|TestConfigPutRejectsExternalServerWithoutMutation|TestConfigGetRejectsExternalServerBeforeInitialization' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 89 complete in `task_plan.md`.
+- Resumed current plan after Phase 89. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited backup restore admission and found the backend already rejects restore while an external PalServer is detected, but the Vue restore button/handler only checked the active backend operation state and would still submit a doomed dangerous restore request.
+- Added Phase 90 to `task_plan.md`: frontend restore external runtime guard.
+- Implemented Phase 90 frontend admission: backup restore now has a dedicated local block reason that includes external PalServer state, while manual backup creation and backup deletion keep their existing active-operation guard.
+- Updated README and `palworld_panel_plan.md` to document local restore blocking under external runtime while leaving manual backup/delete behavior unchanged.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed from cache because this phase changed frontend/docs only.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 90 complete in `task_plan.md`.
+- Resumed current plan after Phase 90. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited frontend/backend admission for remaining config operations and found the config card refresh action only blocked active tasks. When no config is loaded/known to exist and an external PalServer is detected, `GET /api/config` may initialize `PalWorldSettings.ini`, which the backend correctly rejects but the UI still submitted.
+- Added Phase 91 to `task_plan.md`: frontend config initialization external runtime guard.
+- Implemented Phase 91 frontend admission: config refresh/initialization now blocks locally when the config is not already loaded/known to exist and an external PalServer is detected; existing loaded config reads remain available, while config save and manual `.bak` backup keep the stricter mutation guard.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions to document the config initialization guard boundary.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 91 complete in `task_plan.md`.
+- Continued frontend admission audit and found backup/MOD buttons disabled during local in-flight actions, but the direct handlers did not all check `backupActionBusy`, `backupBusy`, `modActionBusy`, or `modBusy` before sending requests.
+- Added Phase 92 to `task_plan.md`: frontend backup and MOD in-flight guard consistency.
+- Implemented Phase 92 frontend admission: manual backup, restore, delete, MOD upload/update/enable/disable/delete, and MOD open-directory now check local busy/in-flight state before sending API requests; backup/MOD refresh buttons are disabled during overlapping local operations so shared busy flags cannot be cleared early by manual refresh.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions to document local in-flight guard consistency for backup and MOD actions.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 92 complete in `task_plan.md`.
+- Continued backend request-shape audit and found several authenticated action routes have no request-body contract but currently ignore unexpected request bodies, including logout, server lifecycle no-body actions, REST save/stop, config backup, backup restore/delete, and MOD enable/disable/open-dir/delete.
+- Added Phase 93 to `task_plan.md`: no-body action request shape enforcement.
+- Implemented Phase 93 backend request-shape enforcement: added `requireNoRequestBody` and applied it to logout, server install/update/start/stop/restart, Palworld REST save/rest-stop, config backup, backup restore/delete, and MOD enable/disable/open-dir/delete.
+- Added `TestNoBodyActionRoutesRejectUnexpectedBodies`, covering confirmed and non-confirmed no-body routes with unexpected JSON bodies and expecting `400 request body must be empty`.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions to document no-body action request-shape enforcement.
+- Verification: `go test ./internal/app -run 'TestNoBodyActionRoutesRejectUnexpectedBodies|TestDecodeJSON' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 93 complete in `task_plan.md`.
+- Resumed current plan after Phase 93. Re-read planning files, ran session catchup with no unsynced context, and confirmed no `Status: in_progress` phase existed.
+- Audited backup restore lifecycle and confirmed the current behavior matches existing plan decisions: archive preflight happens before stopping a managed server, and a managed server is restarted only after successful restore.
+- Audited frontend request-shape hygiene after backend no-body enforcement and found `apiPost` still sends `Content-Type: application/json` even when called without a body.
+- Added Phase 94 to `task_plan.md`: frontend no-body POST header hygiene.
+- Implemented Phase 94 frontend API helper cleanup: `apiPost` now omits JSON `Content-Type` when no body is supplied, while preserving confirmation headers and JSON headers for real payloads.
+- Updated `task_plan.md` decisions to document no-body POST header hygiene.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 94 complete in `task_plan.md`.
+- Continued HTTP semantics audit and confirmed `GET /api/config` still creates `PalWorldSettings.ini` when missing, making a safe-method request perform a config-directory write.
+- Added Phase 95 to `task_plan.md`: explicit config initialization route, with read-only `GET /api/config` and `POST /api/config/init` for creation.
+- Implemented Phase 95 backend route split: `GET /api/config` is now read-only and returns not-initialized when the config is missing; `POST /api/config/init` performs explicit initialization with no-body enforcement, external-runtime protection, and the shared operation slot when creation is needed.
+- Updated config route tests for explicit initialization, read-only missing-config GET behavior, active-operation rejection, external-runtime rejection, and no-body enforcement on `POST /api/config/init`.
+- Updated the Vue config/setup flow so refresh reads only, while the setup guide and config card initialization button call `POST /api/config/init`.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions to document that config initialization is an explicit POST action and `GET /api/config` does not create files.
+- Verification: `go test ./internal/app -run 'TestConfig|TestNoBodyActionRoutesRejectUnexpectedBodies' -count=1 -v` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 95 complete in `task_plan.md`.
+- Resumed current plan after Phase 95. Re-read planning files, ran session catchup with no unsynced context, confirmed no `Status: in_progress` phase existed, and audited the frontend first-run config flow after `GET /api/config` became read-only.
+- Added Phase 96 to `task_plan.md`: represent the expected missing-config 404 as a typed frontend state with localized setup/config guidance while preserving explicit `POST /api/config/init`.
+- Implemented Phase 96 frontend cleanup: `api.ts` now throws `ApiError` with HTTP status, and `loadConfig()` treats a 404 from `/api/config` as an informational "配置文件尚未初始化" state instead of displaying the backend error text.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 96 complete in `task_plan.md`.
+- Continued no-body action route audit and found `POST /api/players/{userid}/unban` still shared the kick/ban optional JSON body path, so an unexpected body could be accepted and proxied to Palworld REST.
+- Added Phase 97 to `task_plan.md`: enforce the player unban no-body contract while keeping kick/ban message payload support.
+- Implemented Phase 97 backend hardening: `handlePlayerUnban` now requires confirmation, rejects non-empty request bodies, validates the route `userid`, and proxies only `userid` to `/unban`.
+- Added `player_unban` to `TestNoBodyActionRoutesRejectUnexpectedBodies` and updated `palworld_panel_plan.md` no-body action examples.
+- Verification: `go test ./internal/app -run 'TestNoBodyActionRoutesRejectUnexpectedBodies|TestPalAPIRoutesProxyWithBasicAuth' -count=1 -v` passed through separate focused reruns.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 97 complete in `task_plan.md`.
+- Performed a follow-up audit of first-screen parallel data loading and backend lifecycle/shutdown. Backup and MOD list reads are locally handled and tolerate empty `pal_server_path`; `cmd/palpanel/main.go`, `App.Close()`, and runtime event handling already match the graceful shutdown/background-worker wait plan, so no new phase was added for those areas.
+- Resumed current plan after Phase 97. Re-read planning files, ran session catchup with no unsynced context, confirmed no `Status: in_progress` phase existed, and audited Palworld REST/frontend action admission plus optional JSON request-body handling.
+- Added Phase 98 to `task_plan.md`: accept actually empty request bodies on routes with optional JSON payloads while preserving strict parsing for non-empty JSON.
+- Implemented Phase 98 backend parsing cleanup: added shared `decodeOptionalJSON`, kept `decodeJSON` strict, and applied optional decoding to manual backup creation, player kick/ban optional messages, and Palworld REST shutdown defaults.
+- Added focused tests for empty optional bodies, malformed/unknown non-empty optional JSON rejection, empty-body manual backup creation, and empty-body Palworld REST kick/shutdown proxy behavior.
+- Updated `palworld_panel_plan.md` and `task_plan.md` decisions to document optional JSON empty-body semantics.
+- Verification: `go test ./internal/app -run 'TestDecodeOptionalJSON|TestBackupRoutesCreateRestoreDelete|TestPalAPIOptionalJSONRoutesAcceptEmptyBodies|TestPalAPIRoutesProxyWithBasicAuth' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 98 complete in `task_plan.md`.
+- Continued backup API input audit and found manual backup `type` was sanitized before filename/SQLite metadata, but task type and start log were derived from raw API input before `createBackup` normalized the value.
+- Added Phase 99 to `task_plan.md`: normalize manual backup API `type` input before task creation so task type, log, filename, and metadata agree.
+- Implemented Phase 99 backend cleanup: `handleCreateBackup` now uses `normalizeBackupType` before creating the operation task and before calling `createBackup`.
+- Added route coverage proving unsafe/blank backup type input defaults to `manual`, creates a `backup_manual` task, writes a `palpanel_manual_...zip` filename, and does not leave raw unsafe type text in the task log.
+- Updated `palworld_panel_plan.md` and `task_plan.md` decisions to document backup type normalization.
+- Verification: `go test ./internal/app -run 'TestBackupRoutesCreateRestoreDelete' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 99 complete in `task_plan.md`.
+- Resumed current plan for Phase 100. Re-read planning files, ran session catchup with no unsynced context, and confirmed `Phase 100: v3.62 MOD PackageName Validation` was in progress.
+- Implemented MOD `PackageName` validation before uploaded metadata is returned for persistence, before `PalModSettings.ini` writes, before `ManagedMods` path derivation, and before legacy MOD rows can change `mods.enabled`.
+- Rejected unsafe MOD package names containing line breaks, path separators, control characters, Windows-invalid characters, reserved device names, or trailing dots; preserved normal package names through the existing MOD upload/enable/disable/delete route coverage.
+- Added focused tests for unsafe uploaded `Info.json` metadata, settings-file no-mutation rejection, legacy enable-state no-mutation/no-backup rejection, and existing ManagedMods path cleanup rejection.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the PackageName safety contract. Recorded and resolved one patch-context miss while editing the validation snippet.
+- Verification: `go test ./internal/app -run 'TestInspectExtractedModRejectsUnsafePackageName|TestUpdatePalModSettingsRejectsUnsafePackageNameWithoutMutation|TestSetModEnabledRejectsUnsafePackageNameBeforeMutation|TestDeleteModRejectsEscapingManagedModsPackageName|TestRenderPalModSettingsPreservesOtherLines|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 100 complete in `task_plan.md`.
+- Continued the MOD path-safety audit after Phase 100 and found persisted `mods.folder_name` values were sanitized on new uploads and constrained for open-dir/delete, but enable-time `Info.json` checks and read-only `install_path` serialization still derived `Mods/Workshop/<folder_name>` directly from legacy rows.
+- Added Phase 101 to `task_plan.md`: v3.63 MOD FolderName Validation.
+- Implemented shared MOD Workshop folder-name validation and path derivation. Upload/update rejects unsafe reused folder names before `pre_mod` backups, enable rejects unsafe folder names before backups/settings/DB mutation, delete/open-dir use the same helper, and list/get omit `install_path` for unsafe legacy rows instead of serializing an escaped path.
+- Added focused tests for unsafe legacy folder names during enable, update, open-dir, delete/path helper coverage, and read-only install-path omission.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the `mods.folder_name` safety contract.
+- Verification: `go test ./internal/app -run 'TestSetModEnabledRejectsUnsafeFolderNameBeforeMutation|TestModUpdateRejectsUnsafePersistedFolderNameBeforeBackup|TestListAndGetModOmitInstallPathForUnsafeFolderName|TestOpenModDirectoryRejectsPersistedEscapingFolderName|TestDeleteModRejectsEscapingManagedModsPackageName|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 101 complete in `task_plan.md`.
+- Continued the MOD metadata resource audit after Phase 101 and found `inspectExtractedMod` read extracted `Info.json` files without a metadata-specific size cap before JSON parsing, pretty-printing, SQLite persistence, and API exposure.
+- Added Phase 102 to `task_plan.md`: v3.64 MOD Info.json Size Limit.
+- Implemented a 1 MiB `Info.json` read limit for MOD metadata. Oversized metadata is rejected before parsing or backup/database side effects, while normal MOD upload/enable/disable/delete coverage still passes.
+- Added focused parser and authenticated upload tests proving oversized `Info.json` is rejected and does not create MOD rows or backup records.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the metadata-specific size limit; recorded and resolved one stale test-anchor patch miss.
+- Verification: `go test ./internal/app -run 'TestInspectExtractedModRejectsOversizedInfoJSON|TestModUploadRejectsOversizedInfoJSONWithoutBackupOrRow|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 102 complete in `task_plan.md`.
+- Resumed the plan after Phase 102. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and audited request/resource handling around frontend API helpers, Palworld REST proxying, and backup archive paths.
+- Found the Palworld REST client used `io.LimitReader` for upstream response bodies but did not detect truncation, so oversized successful responses could turn into ambiguous JSON parse failures and oversized error bodies could be silently clipped.
+- Added Phase 103 to `task_plan.md`: v3.65 Palworld REST Response Size Enforcement.
+- Implemented explicit 2 MiB Palworld REST upstream response-size enforcement by reading one byte past the limit and returning a clear oversized-response error before JSON parsing or error-body serialization.
+- Added focused fake-upstream tests for oversized successful `/settings` responses, oversized HTTP 500 response bodies, and preserved normal REST proxy/concurrent dashboard behavior.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the upstream response-size contract.
+- Verification: `go test ./internal/app -run 'TestPalAPIRouteRejectsOversizedSuccessResponse|TestPalAPIRouteRejectsOversizedErrorResponse|TestPalAPIRoutesProxyWithBasicAuth|TestDashboardFetchesPalRESTEndpointsConcurrently' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 103 complete in `task_plan.md`.
+- Continued the backup persistence-boundary audit after Phase 103 and found restore/delete/prune already validate persisted backup paths before mutation, but `/api/backups` and dashboard recent-backup read payloads could still serialize an unsafe path from a dirty SQLite row.
+- Added Phase 104 to `task_plan.md`: v3.66 Backup Read Path Filtering.
+- Implemented read-side backup path filtering: backup list/dashboard records omit `path` when the persisted path fails the backup-directory containment check, while restore/delete/retention keep their existing fail-closed mutation-time validation.
+- Updated the Vue backup row to show an invalid-path state and locally block restore/delete handlers for rows whose path was omitted by the backend.
+- Added focused route/dashboard tests proving unsafe persisted backup paths are not serialized through read APIs while normal backup route behavior still passes.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the backup read-path filtering contract.
+- Verification: `go test ./internal/app -run 'TestBackupReadAPIsOmitUnsafePersistedPath|TestBackupRoutesCreateRestoreDelete' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 104 complete in `task_plan.md`.
+- Resumed the plan after Phase 104. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and audited backup restore resource handling.
+- Found `validateZipBackup` fully read entries for corrupt-archive preflight but did not cap file count, per-entry uncompressed size, or total uncompressed size, leaving restore preflight/extraction exposed to zip-bomb style resource consumption.
+- Added Phase 105 to `task_plan.md`: v3.67 backup restore ZIP resource limits.
+- Implemented restore ZIP resource limits in `internal/app/backup.go`: preflight and extraction both reject archives over 200000 files, any single entry over 8 GiB, or total uncompressed content over 64 GiB; actual reads are also counted so validation-after-replacement and misleading headers remain bounded.
+- Added focused tests for oversized restore rejection before managed-server stop/protective backup/file writes, plus function-level coverage for per-entry and file-count limits.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the restore ZIP resource-limit contract. Recorded a repeated PowerShell glob-path search error and continued with direct reads/filter-based `rg`.
+- Verification: `go test ./internal/app -run 'TestRestoreBackupRejectsOversizedArchiveBeforeFileSideEffects|TestValidateZipBackupRejectsRestoreResourceLimits|TestRestoreBackupRejectsCorruptArchiveBeforeFileSideEffects|TestRestoreBackupRejectsSymlinkEntryBeforeFileSideEffects|TestBackupRoutesCreateRestoreDelete' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 105 complete in `task_plan.md`.
+- Continued under the active project goal after Phase 105 and audited Palworld REST write action payload validation.
+- Found backend-proxied REST write routes relied mostly on frontend controls/defaults: announce/kick/ban/shutdown messages, route user IDs, and shutdown wait seconds were not bounded by backend validation before upstream proxying.
+- Added Phase 106 to `task_plan.md`: v3.68 Palworld REST write payload validation.
+- Implemented shared backend validation in `internal/app/palapi.go`: messages are trimmed and capped at 500 characters, player user IDs are capped at 128 characters, shutdown wait time defaults to 30 seconds when omitted/zero and rejects negative or greater-than-3600-second values before any upstream REST call.
+- Preserved optional empty-body kick/shutdown behavior and normal Basic Auth proxy behavior; unban remains a no-body action but now shares the same user ID bound.
+- Added frontend input `maxlength` attributes for broadcast, shutdown message, and manual unban UserID fields.
+- Added focused tests proving invalid REST write payloads return 400 and do not reach the fake Palworld REST upstream.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the REST write payload validation contract.
+- Recorded and resolved final line-reference `rg` quoting errors by rerunning simpler fixed-term searches.
+- Verification: `go test ./internal/app -run 'TestPalAPIWriteRoutesValidatePayloadBounds|TestPalAPIOptionalJSONRoutesAcceptEmptyBodies|TestPalAPIRoutesProxyWithBasicAuth' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 106 complete in `task_plan.md`.
+- Resumed current plan after Phase 106. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and audited read-path/resource risks around logs and tasks.
+- Found server logs already keep an in-memory 400-entry cap, but persisted task logs were appended directly into SQLite without a size limit and are returned through `/api/tasks` plus realtime task snapshots.
+- Added Phase 107 to `task_plan.md`: v3.69 task log size limit.
+- Implemented bounded task-log persistence: `appendTaskLog` now appends inside a SQLite transaction, keeps the latest 1 MiB per task, prepends a truncation marker when older content is dropped, preserves redaction/newline normalization, retries transient SQLite busy errors, and still broadcasts task updates after commit.
+- Added focused tests for task-log truncation and UTF-8-safe suffix preservation, plus reran realtime event and redaction coverage. The first UTF-8 truncation fixture did not exceed the temporary test limit, so the fixture was corrected with a longer prefix and the focused tests then passed.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the task-log resource-safety contract.
+- Verification: `go test ./internal/app -run 'TestAppendTaskLogTruncatesToSizeLimit|TestAppendTaskLogTruncationPreservesUTF8|TestTaskAndServerLogRedaction|TestRuntimeEventsWebSocketStreamsSnapshotLogsAndTasks' -count=1 -v` passed after the fixture correction.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 107 complete in `task_plan.md`.
+- Continued the log resource audit after Phase 107. Confirmed no in-progress phase existed and found server logs had a 400-entry rolling window but no per-entry size bound before `/api/server/logs`, dashboard recent logs, or WebSocket `server_log` broadcasts.
+- Added Phase 108 to `task_plan.md`: v3.70 server log entry size limit.
+- Implemented per-entry server-log truncation in `internal/app/server.go`: after redaction and multiline splitting, each server log message is capped at 8 KiB with a truncation suffix before it enters the in-memory log window or realtime event payload.
+- Preserved the existing 400-entry rolling window, redaction order, multiline splitting, and running-state broadcast behavior.
+- Added focused tests proving long server log entries are truncated, UTF-8 remains valid when truncation crosses multibyte content, and multiline splitting still produces separate entries. Recorded and resolved an initial focused verification mistake where non-existent redaction test names matched no tests.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the server-log resource-safety contract.
+- Verification: `go test ./internal/app -run 'TestAppendServerLogTruncatesLongEntries|TestAppendServerLogTruncationPreservesUTF8AndSplitting|TestTaskAndServerLogsRedactSensitiveData|TestRuntimeEventsWebSocketStreamsSnapshotLogsAndTasks' -count=1 -v` passed through focused reruns.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 108 complete in `task_plan.md`.
+- Resumed the active project goal after Phase 108. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and audited remaining read/resource surfaces.
+- Determined authenticated settings/status path fields are admin-configured state, while backup metadata path exposure is already filtered; found the next concrete resource gap is unbounded accumulation of finished task rows despite per-task log size limits.
+- Added Phase 109 to `task_plan.md`: cap retained finished task records while preserving running tasks and the latest task history.
+- Implemented Phase 109 backend retention: `New()` prunes old finished task rows after migrations, `finishTask` prunes after final-status updates, running tasks are excluded from pruning, and the retained finished-task history is capped at 200 records.
+- Added focused tests proving final-status pruning keeps only the newest finished tasks while preserving an older running task, and startup pruning cleans existing finished task history from a prior process run.
+- First Phase 109 focused verification failed because pruning had been wired to task-log append success instead of task finalization; moved the prune call to `finishTask`, recorded the error in `task_plan.md`, and reran successfully.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the finished-task retention contract.
+- Verification: `go test ./internal/app -run 'TestFinishedTaskRetentionKeepsNewestAndRunning|TestNewPrunesFinishedTaskHistory|TestAppendTaskLogTruncatesToSizeLimit|TestRuntimeEventsWebSocketStreamsSnapshotLogsAndTasks' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 109 complete in `task_plan.md`.
+- Resumed the active project goal after Phase 109. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and audited backup archive creation.
+- Found restore ZIP expansion is bounded, but backup creation still walks and copies source files without file-count, per-file, or total source-byte limits before creating the temporary archive.
+- Added Phase 110 to `task_plan.md`: cap backup creation resources using the same conservative limits as restore and verify rejected backups leave no metadata/final archive side effects.
+- Implemented Phase 110 backup creation limits in `internal/app/backup.go`: source metadata now rejects more than 200000 files, files over 8 GiB, or total source size over 64 GiB; actual copied bytes are counted through a limiting reader so files that grow during backup cannot exceed the same per-file or total caps.
+- Added focused tests proving file-count, per-file, and total source limits fail without backup rows or final `.zip` archives, and function-level reader coverage proving actual copied bytes trigger the same errors.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the backup creation resource-limit contract.
+- Verification: `go test ./internal/app -run 'TestCreateBackupRejectsSourceResourceLimitsWithoutBackupRecord|TestBackupCreationLimitReaderCountsActualBytes|TestCreateBackupSkipsSymlinkEntries|TestBackupRoutesCreateRestoreDelete' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 110 complete in `task_plan.md`.
+- Resumed the active project goal after Phase 110. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and audited MOD archive extraction.
+- Found MOD native ZIP extraction had request-size and symlink/path guards but no extracted file-count or byte limits, and external 7z/RAR extraction had workspace/symlink validation but no runtime or output bounds.
+- Added Phase 111 to `task_plan.md`: cap MOD extraction resources and external extractor execution before metadata discovery or installation.
+- Implemented Phase 111 in `internal/app/mods.go`: native ZIP extraction now rejects more than 100000 files, entries over 2 GiB, or total extracted content over 8 GiB using both ZIP header checks and actual copied-byte counting; `validateExtractedModTree` enforces the same file-count/per-file/total limits for external extractor output before metadata discovery.
+- Bounded external extractor execution with a 5-minute timeout and 64 KiB captured stdout/stderr limit so 7z/RAR helpers cannot hang indefinitely or return unbounded output into API/task errors.
+- Added focused tests for native ZIP resource-limit rejection, actual copied-byte limit readers, extracted-tree limits, external extractor timeout, and external extractor output truncation while preserving existing symlink and normal MOD upload coverage.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the MOD extraction resource-limit contract.
+- Verification: `go test ./internal/app -run 'TestExtractZipToDirRejectsResourceLimits|TestModExtractionLimitReaderCountsActualBytes|TestValidateExtractedModTreeRejectsResourceLimits|TestRunExtractorTimesOut|TestRunExtractorCapsErrorOutput|TestExtractZipToDirRejectsSymlinkEntry|TestValidateExtractedModTreeRejectsSymlink|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 111 complete in `task_plan.md`.
+- Resumed the active project goal after Phase 111. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and audited config file read/copy paths.
+- Found `readPalConfigDocument`, config initialization from `DefaultPalWorldSettings.ini`, and config `.bak` copies loaded or copied config files without a size cap; rendered saves also did not preflight the final config size before backup/write side effects.
+- Added Phase 112 to `task_plan.md`: cap `PalWorldSettings.ini` and `DefaultPalWorldSettings.ini` reads/copies plus rendered save output.
+- Implemented Phase 112 in `internal/app/config.go`: config/default reads and config `.bak` copies now cap files at 4 MiB, oversized config errors map to HTTP 413, and `PUT /api/config` validates rendered output size before creating pre-config backups or `.bak` files.
+- Added focused tests proving oversized config GET, oversized default init, oversized `.bak`, and oversized rendered saves reject without config, backup-record, `.bak`, or task side effects while normal config routes still pass.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the config file resource-limit contract.
+- Verification: `go test ./internal/app -run 'TestConfigGetRejectsOversizedConfig|TestConfigInitRejectsOversizedDefaultWithoutMutation|TestBackupFileRejectsOversizedConfigWithoutBak|TestConfigPutRejectsOversizedRenderedConfigWithoutBackupOrBak|TestConfigRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 112 complete in `task_plan.md`.
+- Continued the active project goal after Phase 112 and audited remaining file-copy helpers. Found the shared `copyFile` helper was no longer used by config after Phase 112, but MOD install/update staging still used it and it read each copied file fully into memory.
+- Added Phase 113 to `task_plan.md`: stream the shared file-copy helper through the existing atomic writer while keeping config-specific 4 MiB copy limits separate.
+- Implemented Phase 113 in `internal/app/config.go`: `copyFile` now opens the source file and passes it to `atomicWriteFileFromReader`, preserving source permissions without allocating the whole file as a byte slice.
+- Added focused tests proving generic copy remains separate from the config file limit, preserves copied content, keeps targets unchanged on injected replacement failure, and cleans temporary files; reran normal MOD upload/enable/disable/delete coverage.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the streaming MOD staging copy contract.
+- Verification: `go test ./internal/app -run 'TestCopyFileKeepsConfigLimitSeparateAndPreservesContent|TestCopyFileFailedReplaceKeepsOriginalAndRemovesTemp|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 113 complete in `task_plan.md`.
+- Side correction: user clarified the project only needs to run on Linux and should eventually support Docker deployment; Windows runtime support is not needed.
+- Added Phase 114 to `task_plan.md` and marked it complete as a product-direction correction.
+- Updated `palworld_panel_plan.md` to make Linux the only supported runtime target, native Linux SteamCMD the development/early-operation path, Docker/Compose the final deployment target, and Windows runtime/service support out of scope.
+- Updated `README.md` to remove Windows service/install guidance from the active product path and clarify Linux-only plus Docker/Compose direction.
+- No source-code changes, tests, server restarts, or smoke checks were run for this side correction because it only updated planning/documentation.
+- Continued the active project goal after Phase 114 and audited remaining production `os.ReadFile`/`io.ReadAll` sites. Found `Mods/PalModSettings.ini` reads in active-MOD derivation and settings rewrites had no file-size cap.
+- Added Phase 115 to `task_plan.md`: cap `PalModSettings.ini` reads and preflight MOD operations that will rewrite it before backup/database side effects.
+- Implemented Phase 115 in `internal/app/mods.go`: `readPalModSettings` caps the settings file at 1 MiB, `readActiveModSet` and `updatePalModSettings` use that bounded reader, oversized errors map to HTTP 413, and install/update of an already-enabled MOD plus enable/disable/delete preflight settings size before later side effects.
+- Added focused tests proving oversized `PalModSettings.ini` reads fail without mutation and oversized enable rejects before backup records, database enabled-state changes, or settings writes.
+- First Phase 115 focused verification still created a `pre_mod` backup because `setModEnabled` preflight ran after backup creation; moved the preflight before `createBackupIfPossible`, recorded the error in `task_plan.md`, and reran successfully.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the MOD settings file resource-limit contract.
+- Verification: `go test ./internal/app -run 'TestReadPalModSettingsRejectsOversizedSettings|TestSetModEnabledRejectsOversizedSettingsBeforeBackupOrMutation|TestUpdatePalModSettingsRejectsUnsafePackageNameWithoutMutation|TestUpdatePalModSettingsFailedReplaceKeepsOriginalAndRemovesTemp|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 115 complete in `task_plan.md`.
+- Continued Phase 115 follow-up audit and found MOD list/detail read paths still ignored `readActiveModSet` errors, so an oversized `PalModSettings.ini` would avoid unbounded reads but be silently treated as an empty active set.
+- Added Phase 116 to `task_plan.md`: propagate bounded MOD settings read errors through read-only MOD APIs.
+- Implemented Phase 116 in `internal/app/mods.go`: `listMods` and `getMod` now return `readActiveModSet` errors while preserving missing-file behavior through the bounded reader.
+- Added focused route coverage proving `/api/mods` and `/api/mods/{id}/info` return 413 for oversized `PalModSettings.ini`, while normal MOD upload/enable/disable/delete coverage still passes.
+- Updated README, `palworld_panel_plan.md`, and `task_plan.md` decisions with the explicit MOD settings read-error signaling contract.
+- Verification: `go test ./internal/app -run 'TestModReadRoutesRejectOversizedSettings|TestReadPalModSettingsRejectsOversizedSettings|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 116 complete in `task_plan.md`.
+- Continued the Linux-only deployment follow-up after Phase 116 and audited deployment artifacts. Found the repository still carried a Windows NSSM service helper while the product plan now targets Linux-only runtime and Docker/Compose as the final deployment model.
+- Added Phase 117 to `task_plan.md`: Linux Docker/Compose deployment scaffolding and removal of obsolete Windows service helper.
+- Added `.dockerignore`, a multi-stage `Dockerfile` that builds the Vue frontend and embedded Go binary, and `deploy/compose.yaml` with `/data` and `/palserver` mounts, localhost port publishing, health checks, and non-root UID/GID defaults.
+- Removed `deploy/windows-service-nssm.ps1` so the active deployment directory no longer advertises Windows service installation.
+- Updated README and `palworld_panel_plan.md` with Docker/Compose deployment usage, bind-mount ownership setup, and the Linux-only deployment boundary; updated `task_plan.md` decisions with the Docker deployment contract.
+- Attempted `docker compose -f deploy/compose.yaml config`, but Docker is not installed in this environment; recorded the limitation in `task_plan.md` and continued with static inspection plus normal verification.
+- Verification: Linux amd64 cross-build with CGO disabled passed for the Dockerfile target; temporary .tmp/palpanel-linux-amd64 was removed.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Restarted the local backend on `127.0.0.1:8080`; smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Resumed after Phase 122. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and inspected the current dirty worktree before acting.
+- Added Phase 123 to `task_plan.md`: make the Docker runtime home writable by pointing the `palpanel` passwd home and runtime `HOME` at `/data`, preserving `/data/steamcmd` for explicit SteamCMD mutable state.
+- Updated Dockerfile and Compose so the default passwd home plus runtime `HOME` both point at `/data`, then updated README and the Chinese product plan to document SteamCMD/Steam user-state files such as `~/.steam` staying on the writable/persistent data volume.
+- Static Docker/Compose checks passed: Dockerfile uses `--home-dir /data`, Dockerfile has `ENV HOME=/data`, Compose sets `HOME: /data`, docs mention the writable home behavior, and Dockerfile no longer contains `/nonexistent`.
+- Docker CLI remains unavailable in this environment (`docker` command not found), so Phase 123 used static Docker/Compose inspection rather than a real Docker build or `compose config`.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Built `.tmp/palpanel-phase123.exe`, stopped the previous workspace-owned `.tmp/palpanel-phase122.exe`, and restarted the local backend from the Phase 123 binary on `127.0.0.1:8080`.
+- Smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 123 complete in `task_plan.md`.
+- Resumed after Phase 123. Re-read planning files, ran session catchup with no unsynced context, confirmed no in-progress phase, and inspected the dirty worktree plus Docker/Compose deployment files before acting.
+- Audited PalServer lifecycle during panel/container shutdown. Found `App.Close()` waited for background workers and closed SQLite but did not stop a PalServer child process launched by the panel, while Compose also lacked `init: true` and an explicit stop grace period.
+- Added Phase 124 to `task_plan.md`: v3.85 managed PalServer shutdown lifecycle.
+- Updated `App.Close()` to stop any currently panel-managed PalServer process before closing the stop channel, waiting for background workers, and closing SQLite. `errServerNotRunning` is ignored so idle shutdown remains clean, while real stop errors are returned after resources are still closed.
+- Added focused backend coverage proving `Close()` calls the managed-server stop lifecycle hook and remains idempotent; also added a POSIX shell process fixture test that is skipped on Windows.
+- Updated `deploy/compose.yaml` with `init: true` and `stop_grace_period: 60s`; updated README and the Chinese product plan with the shutdown/reaping contract.
+- Static Compose/documentation checks passed for `init: true`, `stop_grace_period: 60s`, README shutdown wording, and Chinese plan shutdown wording.
+- Focused verification passed: `go test ./internal/app -run 'TestAppCloseStopsManagedServerViaLifecycleHook|TestAppCloseStopsManagedServerProcess|TestAppCloseWaitsForBackgroundWorkersBeforeClosingDatabase|TestServerStartCreatesStartupBackupAfterAdmission' -count=1 -v`; the POSIX process fixture test is skipped on Windows.
+- Docker CLI remains unavailable in this environment (`docker` command not found), so Compose changes were validated statically rather than with `docker compose config`.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Built `.tmp/palpanel-phase124.exe`, stopped the previous workspace-owned `.tmp/palpanel-phase123.exe`, and restarted the local backend from the Phase 124 binary on `127.0.0.1:8080`.
+- Smoke checks passed: `/api/health` returned `ok`, `/` returned HTTP 200 with `PalPanel Lite`, and unauthenticated `/api/dashboard`, `/api/events`, `/api/settings`, `/api/server/status`, and `/api/tasks` returned HTTP 401.
+- Marked Phase 124 complete in `task_plan.md`.
+- Started Phase 125 after the user requested pushing the repository to GitHub and publishing a Docker image to GHCR with GitHub Actions. Confirmed `gh` API identity resolves to `KSAMNI`, no `origin` remote is configured, and `KSAMNI/pal_tool` does not currently exist.
+- Added `.github/workflows/docker-ghcr.yml` to build and push the Linux amd64 Docker image to GHCR on pushes to `main`, `v*` tags, and manual workflow dispatch. The workflow lowercases the repository owner before constructing `ghcr.io/<owner>/palpanel-lite`.
+- Updated Compose and deployment docs so `PALPANEL_IMAGE` can point at a published GHCR image while the existing local build path remains available with `--build`.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Static GHCR/Compose checks passed for workflow package permission, linux/amd64 platform, lowercase-owner image construction, `PALPANEL_IMAGE` Compose override, `.env.example`, and README usage. `git diff --check` reported no whitespace errors; Docker CLI remains unavailable locally, so the real image build/push will be validated by GitHub Actions.
+- Fixed `.gitignore` so the generated frontend assets remain ignored while `internal/frontend/dist/.keep` and `internal/frontend/dist/placeholder.txt` can be tracked for fresh-clone Go embed compatibility.
