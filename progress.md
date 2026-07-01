@@ -1079,3 +1079,13 @@
 - Corrected the first Phase 128 insertion point after it matched the setup-guide card instead of the dashboard card; rechecked pane boundaries by line number before verification.
 - Verification: `npm run build` passed with the existing Vite large chunk warning.
 - Verification: `go test ./...` passed.
+- Started Phase 129 after the user requested a MOD tab workflow to download Steam Workshop MODs automatically and install them into the correct server MOD directory, creating `Mods/Workshop` when missing. Current worktree is clean and synced with `origin/main`.
+- Implemented Phase 129 backend support: added `POST /api/mods/workshop/download`, numeric ID/full URL parsing, SteamCMD `+workshop_download_item 1623730 <id> validate` execution, downloaded-content path discovery, direct `Info.json` install, and single-archive extraction before reusing the existing backup-guarded MOD install pipeline.
+- Refactored MOD install/update so uploaded archives and Steam Workshop downloads share the same final `Mods/Workshop` staging, backup, SQLite commit, enabled-state preservation, and replacement compensation logic.
+- Wired the MOD tab with a Steam Workshop ID/link input and `下载并安装` action that respects the existing MOD mutation locks and refreshes MOD/backup state after success.
+- Added focused backend coverage for successful Workshop download from direct content, single-archive Workshop content extraction, invalid ID rejection before SteamCMD execution, and active-operation rejection before reading the JSON body.
+- First Phase 129 verification attempted `go test` in parallel with `npm run build`; Go compilation failed because the frontend prebuild temporarily removed embedded assets. Re-ran sequentially after the frontend build and recorded the ordering caveat in `task_plan.md`.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./internal/app -run 'TestWorkshopModDownload|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `go test ./...` passed.
+- Marked Phase 129 complete in `task_plan.md`.

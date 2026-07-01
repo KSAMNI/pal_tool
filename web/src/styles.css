@@ -232,6 +232,14 @@ body {
   margin-bottom: 12px;
 }
 
+.mod-workshop-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .config-runtime-alert {
   margin-bottom: 12px;
 }
@@ -575,6 +583,10 @@ body {
   }
 
   .mod-row {
+    grid-template-columns: 1fr;
+  }
+
+  .mod-workshop-form {
     grid-template-columns: 1fr;
   }
 

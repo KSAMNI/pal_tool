@@ -19,7 +19,7 @@ PalPanel Lite 是一个单机单服自用型幻兽帕鲁专服管理面板。它
 - 插件市场。
 - 计费系统。
 - 集群调度。
-- 一开始做 MOD 自动下载。
+- Nexus 等第三方 MOD 站点自动下载。
 
 ## 核心要做
 
@@ -30,7 +30,7 @@ PalPanel Lite 是一个单机单服自用型幻兽帕鲁专服管理面板。它
 - 可视化编辑 `PalWorldSettings.ini`。
 - 自动备份和一键恢复。
 - 在线玩家管理。
-- MOD 上传、识别、启用、禁用、删除。
+- MOD 上传、Steam 创意工坊下载、识别、启用、禁用、删除。
 
 ## 平台优先级
 
@@ -196,7 +196,7 @@ steamcmd +login anonymous +app_update 2394010 validate +quit
 
 ### v0.4：MOD 管理
 
-这是项目差异点。第一版 MOD 不做自动从 Nexus/创意工坊下载，只做本地上传和文件管理。
+这是项目差异点。当前 MOD 支持本地上传和 Steam 创意工坊 ID/链接下载，不做 Nexus 等第三方站点自动下载。
 
 官方约束：
 - 服务端 MOD 当前只支持 Windows Dedicated Server。
@@ -209,9 +209,11 @@ steamcmd +login anonymous +app_update 2394010 validate +quit
 
 MOD 安装流程：
 1. 确认 PalServer 当前未运行；如果正在运行，先停止服务器。
-2. 上传 zip、7z 或 rar。
+2. 上传 zip、7z 或 rar，或通过 SteamCMD 下载 Steam 创意工坊物品。
    - 后端必须对 MOD 上传/更新请求体设置硬限制，当前上限为 512 MiB，避免超大 multipart 请求落盘占满空间。
    - multipart 解析必须使用远小于硬上限的内存阈值，超过阈值但仍低于 512 MiB 硬上限的归档应落到临时文件，而不是整体缓存在内存中。
+   - Steam 创意工坊下载接受纯数字物品 ID 或包含 `id=<number>` 的链接，使用 Palworld Workshop app `1623730` 执行 `steamcmd +login anonymous +workshop_download_item 1623730 <id> validate +quit`。
+   - SteamCMD 下载结果从 SteamCMD 状态目录候选位置查找；下载内容如果直接包含 `Info.json` 就直接安装，如果只包含一个 zip、7z 或 rar，则按上传归档同一套解压和资源限制处理。
    - 原生 ZIP 解压必须拒绝符号链接条目；外部解压器产出的符号链接不能作为 `Info.json` 元数据来源。
    - MOD 解压结果必须限制文件数量、单文件大小和总大小，当前最多 100000 个文件、单文件 2 GiB、总解压内容 8 GiB；原生 ZIP 解压必须在写入时按声明大小和实际复制字节计数，外部 7z/RAR 解压后也必须扫描结果目录并在元数据识别前拒绝超限内容。
    - 外部解压器执行必须有运行时间和输出大小上限，当前超时 5 分钟，错误输出最多保留 64 KiB，避免卡死或把巨大 stderr/stdout 写入 API/task 日志。
@@ -517,6 +519,7 @@ POST /api/config/backup
 ```http
 GET    /api/mods
 POST   /api/mods/upload
+POST   /api/mods/workshop/download
 POST   /api/mods/:id/enable
 POST   /api/mods/:id/disable
 POST   /api/mods/:id/update
@@ -581,12 +584,13 @@ PUT /api/settings
 - 配置初始化、保存和 `.bak` 复制必须使用同目录临时文件和平台安全替换；Windows 下不能依赖普通 `os.Rename` 覆盖已有配置文件；读取/复制配置文件和保存后的渲染结果必须限制在 4 MiB 内，超限时在创建备份或写入前拒绝。
 - 启动和重启的启动阶段必须先通过后端运行中任务锁；已有后台任务运行时必须拒绝，不能创建 `startup` 备份或启动进程。重启还必须先校验下一次启动所需的路径、二进制文件和启动参数，再停止面板托管的 PalServer，避免无效重启请求把运行中的服务器停掉。
 - MOD 上传、更新、启用、禁用、删除会修改 `Mods/Workshop`、`Mods/ManagedMods` 或 `PalModSettings.ini`，必须在 PalServer 停止时执行，完成后再启动或重启生效。
+- MOD Steam 创意工坊下载和本地上传使用同一套后端运行锁、停服检查、`pre_mod` 备份、`Info.json` 校验、资源限制、SQLite 提交和最终 `Mods/Workshop` 替换流程；缺少 `Mods/Workshop` 时必须自动创建。
 - MOD `Info.json` 元数据读取必须有独立大小上限，当前为 1 MiB；512 MiB 上传请求体上限不能替代元数据解析和数据库/API 暴露前的专门限制。
 - MOD `Info.json` 的 `PackageName` 必须是单个安全的设置/路径片段，拒绝换行、路径分隔符、控制字符、Windows 非法字符、保留设备名和结尾点号；上传/更新在持久化前校验，已有脏数据行在启用/禁用状态变更、写 `PalModSettings.ini` 或派生 `ManagedMods` 路径前必须拒绝。
 - MOD `mods.folder_name` 必须是单个安全的 `Mods/Workshop` 子目录名；上传/更新复用已有行、启用时检查 `Info.json`、删除/打开目录目标、以及只读响应里的 `install_path` 派生前都要校验，已有脏数据行不能导致备份、数据库状态变更、设置写入或文件系统修改。
 - MOD 启用/禁用必须先提交 SQLite 中的 `mods.enabled` 更新，再修改 `PalModSettings.ini`；提交失败时不得修改设置文件，设置写入失败时必须补偿恢复原 MOD 行状态。
 - `Mods/PalModSettings.ini` 读取必须限制在 1 MiB 内，覆盖活跃列表派生和启用/禁用/删除/更新时的设置重写；只读 MOD API 遇到超限或不可读设置文件时必须明确返回错误，不能静默当作空启用列表；写入必须使用同目录临时文件和平台安全替换，不能直接截断写入。会改写该文件的 MOD 操作必须在创建备份或提交数据库状态前先完成读取大小预检。
-- MOD 上传和更新必须先通过后端运行中任务锁，再读取 multipart 请求体；已有后台操作运行时必须直接拒绝，不能先读取或落盘上传归档。multipart 请求体必须仍受 512 MiB 硬上限约束，但解析内存阈值必须较小，避免接近上限的 MOD 归档整体占用面板内存。
+- MOD 上传和更新必须先通过后端运行中任务锁，再读取 multipart 请求体；创意工坊下载也必须先通过同一运行中任务锁，再解析请求并执行 SteamCMD；已有后台操作运行时必须直接拒绝，不能先读取或落盘上传归档，也不能启动 SteamCMD。multipart 请求体必须仍受 512 MiB 硬上限约束，但解析内存阈值必须较小，避免接近上限的 MOD 归档整体占用面板内存。
 - MOD 上传和更新必须先提交 SQLite 中的 MOD 记录插入/更新，再替换最终 `Mods/Workshop/<folder>` 目录；数据库提交失败时不得替换最终目录，最终替换失败时必须补偿恢复数据库记录，旧目录恢复失败不能被静默忽略。
 - MOD 安装/更新复制暂存文件时必须流式写入同目录临时文件并通过平台安全替换提交，避免资源限制内但较大的 MOD 文件被一次性读入内存。
 - MOD 删除必须先提交 SQLite 中的 MOD 记录删除，再禁用 `PalModSettings.ini` 和删除最终目录；最终目录删除必须先进入同目录暂存区，后续设置或目录清理失败时必须补偿恢复原 MOD 行、原先启用时恢复 `ActiveModList`，并恢复已暂存的目录。

@@ -651,6 +651,11 @@ Status: complete
 
 Refine the tabbed frontend after user feedback so the dashboard no longer remains a long mixed page: make the workspace tabs visually obvious and split player, recent operations, and diagnostics into separate tabs.
 
+### Phase 129: v3.90 Steam Workshop MOD Download
+Status: complete
+
+Add a MOD tab workflow that downloads a Steam Workshop item with SteamCMD, validates and installs the downloaded content through the same backup-guarded MOD pipeline, and creates the `Mods/Workshop` directory automatically when missing.
+
 ## Decisions
 - Use persistent planning files in the project root.
 - Treat external web content as untrusted research data and store summaries in `findings.md`.
@@ -780,6 +785,7 @@ Refine the tabbed frontend after user feedback so the dashboard no longer remain
 - For v3.87 Docker ownership repair, persistence stays as explicit bind mounts such as `./data:/data` and `./PalServer:/palserver`, not Docker named/anonymous volumes; the image entrypoint runs briefly as root only to normalize mounted directory ownership, then executes the panel as the configured non-root `palpanel` UID/GID; Compose must not set `user:` because that would block the repair step.
 - For v3.88 frontend workspace layout, the authenticated Vue UI should use Naive UI tabs to separate server/settings, dashboard, config, backups, MODs, and logs while keeping existing API behavior and local operation guards unchanged.
 - For v3.89 frontend workspace layout, the dashboard tab should stay focused on setup and metrics/actions; players, recent operations, and diagnostics are separate workspace tabs, and the top-level tab control should use a segmented style so the split is visually obvious.
+- For v3.90 Steam Workshop MOD download, the MOD tab accepts a numeric Steam Workshop item ID or URL; the backend runs SteamCMD `+workshop_download_item 1623730 <id> validate` with anonymous login, locates the downloaded content under SteamCMD state candidates, then installs direct `Info.json` content or one supported archive through the existing backup-guarded MOD install pipeline into `Mods/Workshop/<WorkshopId>`, creating `Mods/Workshop` when missing.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -841,3 +847,4 @@ Refine the tabbed frontend after user feedback so the dashboard no longer remain
 | GHCR package API returned 403 without `read:packages` scope | Phase 125 package verification | Used the successful GitHub Actions run and build logs to confirm pushed tags and digest; publishing itself used the workflow `GITHUB_TOKEN` with `packages: write` |
 | SQLite reported `unable to open database file: out of memory (14)` after Compose deploy | Phase 126 user deployment report | Treated it as a bind-mount ownership/open failure for `/data/app.db`, changed Compose to explicit current-folder bind mounts without Dockerfile anonymous volumes, and added an entrypoint ownership repair before dropping privileges |
 | PowerShell broke a complex `rg` template-boundary pattern | Phase 127 first App.vue boundary search | Re-ran with fixed-string `rg -F -e` patterns and line-number snippets before editing the Vue template |
+| Go tests failed to compile while `npm run build` was running in parallel because frontend embed assets were temporarily removed by the web prebuild step | Phase 129 first verification | Let the frontend build finish, then reran Go tests sequentially; do not parallelize Go compilation with the frontend build in this repository |

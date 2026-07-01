@@ -775,6 +775,27 @@
             <n-alert type="info" :show-icon="false" class="mod-warning">
               MOD 变更会写入服务端文件；请先停止 PalServer，完成后再启动或重启生效。
             </n-alert>
+            <div class="mod-workshop-form">
+              <n-input
+                v-model:value="workshopModInput"
+                size="small"
+                clearable
+                placeholder="Steam 创意工坊 ID 或链接"
+                :disabled="modActionBusy === 'workshop-download'"
+                @keydown.enter.prevent="downloadWorkshopMod"
+              />
+              <n-button
+                size="small"
+                type="primary"
+                secondary
+                :loading="modActionBusy === 'workshop-download'"
+                :disabled="workshopDownloadDisabled"
+                @click="downloadWorkshopMod"
+              >
+                <template #icon><Download :size="15" /></template>
+                下载并安装
+              </n-button>
+            </div>
             <n-alert v-if="modMutationBlocked" type="warning" :show-icon="false" class="mod-warning">
               {{ modMutationBlockReason }}
             </n-alert>
@@ -926,6 +947,7 @@ const backupActionBusy = ref('')
 const mods = ref<ModRecord[]>([])
 const modBusy = ref(false)
 const modActionBusy = ref('')
+const workshopModInput = ref('')
 const modFileInput = ref<HTMLInputElement | null>(null)
 const modUpdateFileInput = ref<HTMLInputElement | null>(null)
 const modUpdateTarget = ref<ModRecord | null>(null)
@@ -1152,6 +1174,7 @@ const modMutationActionBlockReason = computed(() => {
   if (modMutationBlocked.value) return modMutationBlockReason.value
   return ''
 })
+const workshopDownloadDisabled = computed(() => modMutationActionBlocked.value || workshopModInput.value.trim() === '')
 const modDirectoryActionBlocked = computed(() => modActionInFlight.value)
 const modDirectoryActionBlockReason = computed(() => {
   if (modActionInFlight.value) return '已有 MOD 操作正在执行，请稍后再试。'
@@ -1623,6 +1646,27 @@ async function loadMods() {
 function openModUpload() {
   if (!ensureModMutationAllowed()) return
   modFileInput.value?.click()
+}
+
+async function downloadWorkshopMod() {
+  const workshopID = workshopModInput.value.trim()
+  if (!workshopID) {
+    message.warning('请输入 Steam 创意工坊 ID 或链接')
+    return
+  }
+  if (!ensureModMutationAllowed()) return
+  modActionBusy.value = 'workshop-download'
+  try {
+    const mod = await apiPost<ModRecord>('/api/mods/workshop/download', { workshop_id: workshopID })
+    await Promise.all([loadMods(), loadBackups()])
+    modChangesNeedRestart.value = true
+    workshopModInput.value = ''
+    message.success(`MOD 已下载并安装：${mod.package_name}`)
+  } catch (err) {
+    message.error((err as Error).message)
+  } finally {
+    modActionBusy.value = ''
+  }
 }
 
 async function uploadSelectedMod(event: Event) {

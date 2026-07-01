@@ -135,6 +135,174 @@ func TestModUploadEnableDisableDeleteRoutes(t *testing.T) {
 	}
 }
 
+func TestWorkshopModDownloadRouteInstallsDownloadedContent(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamRoot := t.TempDir()
+	steamPath := filepath.Join(steamRoot, steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("fake steamcmd"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+
+	const workshopID = "123456789"
+	var capturedArgs []string
+	var capturedDir string
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		capturedArgs = append([]string(nil), cmd.Args[1:]...)
+		capturedDir = cmd.Dir
+		contentRoot := filepath.Join(cmd.Dir, "steamapps", "workshop", "content", palworldWorkshopAppID, workshopID, "SampleWorkshopMod")
+		writeSampleModContent(t, contentRoot, "SampleWorkshopPackage", "4.5.6")
+		if cmd.Stdout != nil {
+			_, _ = cmd.Stdout.Write([]byte("download ok\n"))
+		}
+		return nil
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": "https://steamcommunity.com/sharedfiles/filedetails/?id=" + workshopID,
+	})
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("workshop download status = %d, want %d; body=%s", resp.StatusCode, http.StatusCreated, body)
+	}
+	var mod modRecord
+	if err := json.NewDecoder(resp.Body).Decode(&mod); err != nil {
+		t.Fatalf("decode mod: %v", err)
+	}
+	resp.Body.Close()
+
+	if mod.PackageName != "SampleWorkshopPackage" || mod.Version != "4.5.6" || mod.FolderName != workshopID {
+		t.Fatalf("unexpected mod metadata: %#v", mod)
+	}
+	if capturedDir != steamRoot {
+		t.Fatalf("steamcmd dir = %q, want %q", capturedDir, steamRoot)
+	}
+	argsText := strings.Join(capturedArgs, " ")
+	if !strings.Contains(argsText, "+workshop_download_item "+palworldWorkshopAppID+" "+workshopID) {
+		t.Fatalf("steamcmd args missing workshop download item: %q", argsText)
+	}
+	infoPath := filepath.Join(serverPath, "Mods", "Workshop", workshopID, "Info.json")
+	if !fileExists(infoPath) {
+		t.Fatalf("installed Workshop Info.json missing: %s", infoPath)
+	}
+	task := requireTaskWithStatus(t, panel, "mod_workshop_download", "success")
+	if !strings.Contains(task.Log, "Steam Workshop MOD installed") || !strings.Contains(task.Log, "download ok") {
+		t.Fatalf("workshop task log missing expected entries: %s", task.Log)
+	}
+}
+
+func TestWorkshopModDownloadExtractsSingleArchiveContent(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamRoot := t.TempDir()
+	steamPath := filepath.Join(steamRoot, steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("fake steamcmd"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+
+	const workshopID = "222333444"
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		contentRoot := filepath.Join(cmd.Dir, "steamapps", "workshop", "content", palworldWorkshopAppID, workshopID)
+		if err := os.MkdirAll(contentRoot, 0o755); err != nil {
+			return err
+		}
+		return os.WriteFile(filepath.Join(contentRoot, "DownloadedMod.zip"), sampleModZipWith(t, "ArchivedWorkshopPackage", "7.8.9"), 0o644)
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": workshopID,
+	})
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("workshop download status = %d, want %d; body=%s", resp.StatusCode, http.StatusCreated, body)
+	}
+	var mod modRecord
+	if err := json.NewDecoder(resp.Body).Decode(&mod); err != nil {
+		t.Fatalf("decode mod: %v", err)
+	}
+	resp.Body.Close()
+	if mod.PackageName != "ArchivedWorkshopPackage" || mod.FolderName != workshopID {
+		t.Fatalf("unexpected archived workshop mod metadata: %#v", mod)
+	}
+	infoPath := filepath.Join(serverPath, "Mods", "Workshop", workshopID, "Info.json")
+	if !fileExists(infoPath) {
+		t.Fatalf("installed archived Workshop Info.json missing: %s", infoPath)
+	}
+}
+
+func TestWorkshopModDownloadRejectsInvalidIDBeforeCommand(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	ranCommand := false
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		ranCommand = true
+		return nil
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": "not-a-number",
+	})
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("invalid workshop id status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+	resp.Body.Close()
+	if ranCommand {
+		t.Fatalf("steamcmd command ran for invalid Workshop ID")
+	}
+	assertNoTasks(t, panel)
+}
+
+func TestWorkshopModDownloadRejectsActiveOperationBeforeReadingBody(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	panel.taskMu.Lock()
+	panel.taskRunning = true
+	panel.taskMu.Unlock()
+	defer func() {
+		panel.taskMu.Lock()
+		panel.taskRunning = false
+		panel.taskMu.Unlock()
+	}()
+
+	body := &countingReadCloser{}
+	req := httptest.NewRequest(http.MethodPost, "/api/mods/workshop/download", body)
+	req.Header.Set("Content-Type", "application/json")
+	recorder := httptest.NewRecorder()
+	panel.handleDownloadWorkshopMod(recorder, req)
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("workshop download status = %d, want %d; body=%s", recorder.Code, http.StatusConflict, recorder.Body.String())
+	}
+	if body.reads != 0 {
+		t.Fatalf("workshop download request body was read %d times despite active operation", body.reads)
+	}
+	assertNoTasks(t, panel)
+}
+
 func TestModUploadKeepsWorkshopCleanWhenDatabaseInsertFails(t *testing.T) {
 	panel, err := New(t.TempDir())
 	if err != nil {
@@ -2334,6 +2502,28 @@ func sampleModZipWith(t *testing.T, packageName, version string) []byte {
 		t.Fatalf("zip close: %v", err)
 	}
 	return buf.Bytes()
+}
+
+func writeSampleModContent(t *testing.T, root, packageName, version string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Join(root, "Data"), 0o755); err != nil {
+		t.Fatalf("mkdir sample mod content: %v", err)
+	}
+	info := `{
+  "Name": "Sample Mod",
+  "PackageName": "` + packageName + `",
+  "Version": "` + version + `",
+  "Author": "Tester",
+  "InstallRules": [
+    { "IsServer": true, "Files": [] }
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(root, "Info.json"), []byte(info), 0o644); err != nil {
+		t.Fatalf("write sample Info.json: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "Data", "file.txt"), []byte("payload"), 0o644); err != nil {
+		t.Fatalf("write sample mod payload: %v", err)
+	}
 }
 
 func sampleModZipWithInfoBytes(t *testing.T, info []byte) []byte {

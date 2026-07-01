@@ -234,6 +234,7 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("DELETE /api/backups/{id}", a.withAuth(a.handleDeleteBackup))
 	mux.HandleFunc("GET /api/mods", a.withAuth(a.handleListMods))
 	mux.HandleFunc("POST /api/mods/upload", a.withAuth(a.handleUploadMod))
+	mux.HandleFunc("POST /api/mods/workshop/download", a.withAuth(a.handleDownloadWorkshopMod))
 	mux.HandleFunc("POST /api/mods/{id}/enable", a.withAuth(a.handleEnableMod))
 	mux.HandleFunc("POST /api/mods/{id}/disable", a.withAuth(a.handleDisableMod))
 	mux.HandleFunc("POST /api/mods/{id}/update", a.withAuth(a.handleUpdateMod))

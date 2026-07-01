@@ -10,6 +10,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,6 +51,12 @@ type openDirectoryResponse struct {
 	Path   string `json:"path"`
 }
 
+type workshopModDownloadRequest struct {
+	WorkshopID  string `json:"workshop_id"`
+	WorkshopURL string `json:"workshop_url"`
+}
+
+const palworldWorkshopAppID = "1623730"
 const maxModArchiveUploadBytes int64 = 512 << 20
 const maxModInfoJSONBytes int64 = 1 << 20
 const modExtractorOutputTruncatedSuffix = " [... output truncated]"
@@ -108,6 +115,41 @@ func (a *App) handleUploadMod(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		a.logTaskf(taskID, "MOD installed: %s version %s", mod.PackageName, mod.Version)
+		return nil
+	})
+	if err != nil {
+		writeError(w, actionErrorStatus(err), err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, mod)
+}
+
+func (a *App) handleDownloadWorkshopMod(w http.ResponseWriter, r *http.Request) {
+	releaseTask, err := a.reserveTaskSlot()
+	if err != nil {
+		writeError(w, actionErrorStatus(err), err)
+		return
+	}
+	defer releaseTask()
+
+	var req workshopModDownloadRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	workshopID, err := normalizeSteamWorkshopID(firstNonEmpty(req.WorkshopID, req.WorkshopURL))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var mod modRecord
+	err = a.runOperationTaskAdmitted("mod_workshop_download", fmt.Sprintf("Downloading Steam Workshop MOD %s", workshopID), "", func(taskID int64) error {
+		var err error
+		mod, err = a.installWorkshopMod(workshopID, taskID)
+		if err != nil {
+			return err
+		}
+		a.logTaskf(taskID, "Steam Workshop MOD installed: %s version %s", mod.PackageName, mod.Version)
 		return nil
 	})
 	if err != nil {
@@ -365,6 +407,131 @@ func (a *App) installUploadedModForPackage(file multipart.File, header *multipar
 		return modRecord{}, errors.New("could not derive mod folder name")
 	}
 
+	return a.installExtractedModSource(base, info, folderName)
+}
+
+func (a *App) installWorkshopMod(workshopID string, taskID int64) (modRecord, error) {
+	normalizedID, err := normalizeSteamWorkshopID(workshopID)
+	if err != nil {
+		return modRecord{}, err
+	}
+	workshopID = normalizedID
+	settings, err := a.loadSettings()
+	if err != nil {
+		return modRecord{}, err
+	}
+	if err := a.ensureServerStoppedForModMutation(settings); err != nil {
+		return modRecord{}, err
+	}
+	base, err := configuredServerBase(settings)
+	if err != nil {
+		return modRecord{}, err
+	}
+	if err := os.MkdirAll(base, 0o755); err != nil {
+		return modRecord{}, err
+	}
+	steamPath := resolveSteamCMD(settings.SteamCMDPath)
+	if steamPath == "" {
+		return modRecord{}, errors.New("steamcmd was not found; set steamcmd_path or add it to PATH")
+	}
+	if err := a.downloadSteamWorkshopItem(taskID, steamPath, workshopID); err != nil {
+		return modRecord{}, err
+	}
+	contentDir, err := findSteamWorkshopContentDir(steamPath, palworldWorkshopAppID, workshopID)
+	if err != nil {
+		return modRecord{}, err
+	}
+	info, cleanup, err := a.inspectSteamWorkshopModContent(contentDir)
+	if err != nil {
+		return modRecord{}, err
+	}
+	defer cleanup()
+	folderName := sanitizeFolderName(workshopID)
+	if folderName == "" {
+		return modRecord{}, errors.New("could not derive Steam Workshop mod folder name")
+	}
+	return a.installExtractedModSource(base, info, folderName)
+}
+
+func (a *App) downloadSteamWorkshopItem(taskID int64, steamPath, workshopID string) error {
+	args := []string{
+		"+login", "anonymous",
+		"+workshop_download_item", palworldWorkshopAppID, workshopID, "validate",
+		"+quit",
+	}
+	a.logTaskf(taskID, "Running %s %s", steamPath, strings.Join(args, " "))
+	cmd := exec.Command(steamPath, args...)
+	cmd.Dir = filepath.Dir(steamPath)
+	writer := &taskLogWriter{app: a, taskID: taskID}
+	cmd.Stdout = writer
+	cmd.Stderr = writer
+	err := a.runExternalCommand(cmd)
+	writer.Flush()
+	if err != nil {
+		return fmt.Errorf("download Steam Workshop item %s: %w", workshopID, err)
+	}
+	return nil
+}
+
+func (a *App) inspectSteamWorkshopModContent(contentDir string) (modInfo, func(), error) {
+	if err := validateExtractedModTree(contentDir); err != nil {
+		return modInfo{}, func() {}, err
+	}
+	info, err := inspectExtractedMod(contentDir)
+	if err == nil {
+		return info, func() {}, nil
+	}
+	if !isMissingInfoJSONError(err) {
+		return modInfo{}, func() {}, err
+	}
+	archivePath, archiveErr := findSingleModArchive(contentDir)
+	if archiveErr != nil {
+		return modInfo{}, func() {}, fmt.Errorf("%w; no supported archive was found in downloaded Workshop content: %v", err, archiveErr)
+	}
+	uploadDir := filepath.Join(a.dataDir, "uploads")
+	if err := os.MkdirAll(uploadDir, 0o755); err != nil {
+		return modInfo{}, func() {}, err
+	}
+	workspaceDir, err := os.MkdirTemp(uploadDir, "workshop-mod-*")
+	if err != nil {
+		return modInfo{}, func() {}, err
+	}
+	keepWorkspace := false
+	defer func() {
+		if !keepWorkspace {
+			_ = os.RemoveAll(workspaceDir)
+		}
+	}()
+
+	tempArchive := filepath.Join(workspaceDir, filepath.Base(archivePath))
+	if err := copyFile(archivePath, tempArchive); err != nil {
+		return modInfo{}, func() {}, err
+	}
+	extractDir := filepath.Join(workspaceDir, "content")
+	if err := os.MkdirAll(extractDir, 0o755); err != nil {
+		return modInfo{}, func() {}, err
+	}
+	if err := extractModArchive(tempArchive, filepath.Base(tempArchive), extractDir); err != nil {
+		return modInfo{}, func() {}, err
+	}
+	if err := validateExtractionWorkspace(workspaceDir, extractDir, tempArchive); err != nil {
+		return modInfo{}, func() {}, err
+	}
+	if err := validateExtractedModTree(extractDir); err != nil {
+		return modInfo{}, func() {}, err
+	}
+	info, err = inspectExtractedMod(extractDir)
+	if err != nil {
+		return modInfo{}, func() {}, err
+	}
+	keepWorkspace = true
+	return info, func() { _ = os.RemoveAll(workspaceDir) }, nil
+}
+
+func (a *App) installExtractedModSource(base string, info modInfo, folderName string) (modRecord, error) {
+	if strings.TrimSpace(info.SourceRoot) == "" {
+		return modRecord{}, errors.New("mod source root is required")
+	}
 	previous, err := a.getModByPackage(info.PackageName)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return modRecord{}, err
@@ -776,6 +943,131 @@ func workshopModDirectory(base, folderName string) (string, error) {
 		return "", err
 	}
 	return targetDir, nil
+}
+
+func normalizeSteamWorkshopID(input string) (string, error) {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return "", errors.New("workshop_id is required")
+	}
+	if isDecimalWorkshopID(input) {
+		return input, nil
+	}
+	if parsed, err := url.Parse(input); err == nil {
+		if id := strings.TrimSpace(parsed.Query().Get("id")); id != "" {
+			if isDecimalWorkshopID(id) {
+				return id, nil
+			}
+			return "", fmt.Errorf("Steam Workshop item id must be numeric: %q", id)
+		}
+	}
+	query := input
+	if index := strings.IndexByte(query, '?'); index >= 0 {
+		query = query[index+1:]
+	}
+	if values, err := url.ParseQuery(query); err == nil {
+		if id := strings.TrimSpace(values.Get("id")); id != "" {
+			if isDecimalWorkshopID(id) {
+				return id, nil
+			}
+			return "", fmt.Errorf("Steam Workshop item id must be numeric: %q", id)
+		}
+	}
+	return "", errors.New("workshop_id must be a numeric Steam Workshop item ID or a URL containing id=<number>")
+}
+
+func isDecimalWorkshopID(value string) bool {
+	if value == "" || len(value) > 32 {
+		return false
+	}
+	for _, r := range value {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func findSteamWorkshopContentDir(steamPath, appID, workshopID string) (string, error) {
+	rel := filepath.Join("steamapps", "workshop", "content", appID, workshopID)
+	candidates := make([]string, 0, 8)
+	addWorkshopContentCandidate := func(root string) {
+		root = strings.TrimSpace(root)
+		if root == "" {
+			return
+		}
+		candidate, err := filepath.Abs(filepath.Join(root, rel))
+		if err != nil {
+			return
+		}
+		for _, existing := range candidates {
+			if sameFilesystemPath(existing, candidate) {
+				return
+			}
+		}
+		candidates = append(candidates, candidate)
+	}
+	addWorkshopContentCandidate(os.Getenv("PALPANEL_STEAMCMD_DIR"))
+	if strings.TrimSpace(steamPath) != "" {
+		addWorkshopContentCandidate(filepath.Dir(steamPath))
+	}
+	if home := strings.TrimSpace(os.Getenv("HOME")); home != "" {
+		addWorkshopContentCandidate(filepath.Join(home, "Steam"))
+		addWorkshopContentCandidate(filepath.Join(home, ".steam", "steam"))
+		addWorkshopContentCandidate(filepath.Join(home, ".local", "share", "Steam"))
+	}
+	for _, candidate := range candidates {
+		info, err := os.Stat(candidate)
+		if err == nil && info.IsDir() {
+			return candidate, nil
+		}
+		if err == nil && !info.IsDir() {
+			return "", fmt.Errorf("downloaded Steam Workshop item path is not a directory: %s", candidate)
+		}
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+	}
+	return "", fmt.Errorf("downloaded Steam Workshop item %s was not found; checked %s", workshopID, strings.Join(candidates, ", "))
+}
+
+func isMissingInfoJSONError(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "Info.json was not found")
+}
+
+func findSingleModArchive(root string) (string, error) {
+	var matches []string
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 || info.IsDir() {
+			return nil
+		}
+		switch strings.ToLower(filepath.Ext(d.Name())) {
+		case ".zip", ".7z", ".rar":
+			matches = append(matches, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(matches) == 0 {
+		return "", errors.New("no .zip, .7z, or .rar file found")
+	}
+	if len(matches) > 1 {
+		sort.Strings(matches)
+		return "", fmt.Errorf("multiple supported archives found: %s", strings.Join(matches, ", "))
+	}
+	return matches[0], nil
 }
 
 func (a *App) openModDirectoryByID(id int64) (string, error) {
