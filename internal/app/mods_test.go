@@ -135,6 +135,29 @@ func TestModUploadEnableDisableDeleteRoutes(t *testing.T) {
 	}
 }
 
+func TestListModsReturnsEmptyArrayWhenNoModsInstalled(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	setTestAppSetting(t, panel, "pal_server_path", t.TempDir())
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodGet, server.URL+"/api/mods", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("list mods status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read list mods body: %v", err)
+	}
+	resp.Body.Close()
+	if strings.TrimSpace(string(body)) != "[]" {
+		t.Fatalf("list mods body = %s, want []", body)
+	}
+}
+
 func TestWorkshopModDownloadRouteInstallsDownloadedContent(t *testing.T) {
 	panel, err := New(t.TempDir())
 	if err != nil {

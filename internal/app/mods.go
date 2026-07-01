@@ -1151,7 +1151,7 @@ func (a *App) listMods() ([]modRecord, error) {
 	}
 	defer rows.Close()
 
-	var mods []modRecord
+	mods := []modRecord{}
 	for rows.Next() {
 		mod, err := scanMod(rows)
 		if err != nil {

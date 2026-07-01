@@ -656,6 +656,11 @@ Status: complete
 
 Add a MOD tab workflow that downloads a Steam Workshop item with SteamCMD, validates and installs the downloaded content through the same backup-guarded MOD pipeline, and creates the `Mods/Workshop` directory automatically when missing.
 
+### Phase 130: v3.91 Empty MOD List Rendering Fix
+Status: complete
+
+Fix the MOD tab blank page when no MODs are installed by ensuring `/api/mods` serializes an empty list as `[]` instead of `null`, and by making the Vue loader coerce unexpected null responses back to an empty array before the template reads `mods.length`.
+
 ## Decisions
 - Use persistent planning files in the project root.
 - Treat external web content as untrusted research data and store summaries in `findings.md`.
@@ -786,6 +791,7 @@ Add a MOD tab workflow that downloads a Steam Workshop item with SteamCMD, valid
 - For v3.88 frontend workspace layout, the authenticated Vue UI should use Naive UI tabs to separate server/settings, dashboard, config, backups, MODs, and logs while keeping existing API behavior and local operation guards unchanged.
 - For v3.89 frontend workspace layout, the dashboard tab should stay focused on setup and metrics/actions; players, recent operations, and diagnostics are separate workspace tabs, and the top-level tab control should use a segmented style so the split is visually obvious.
 - For v3.90 Steam Workshop MOD download, the MOD tab accepts a numeric Steam Workshop item ID or URL; the backend runs SteamCMD `+workshop_download_item 1623730 <id> validate` with anonymous login, locates the downloaded content under SteamCMD state candidates, then installs direct `Info.json` content or one supported archive through the existing backup-guarded MOD install pipeline into `Mods/Workshop/<WorkshopId>`, creating `Mods/Workshop` when missing.
+- For v3.91 MOD list rendering, read APIs that conceptually return lists should serialize empty lists as `[]`; the frontend should still defensively coerce a null MOD list to `[]` so a backend/API regression cannot break `mods.length` rendering.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -848,3 +854,4 @@ Add a MOD tab workflow that downloads a Steam Workshop item with SteamCMD, valid
 | SQLite reported `unable to open database file: out of memory (14)` after Compose deploy | Phase 126 user deployment report | Treated it as a bind-mount ownership/open failure for `/data/app.db`, changed Compose to explicit current-folder bind mounts without Dockerfile anonymous volumes, and added an entrypoint ownership repair before dropping privileges |
 | PowerShell broke a complex `rg` template-boundary pattern | Phase 127 first App.vue boundary search | Re-ran with fixed-string `rg -F -e` patterns and line-number snippets before editing the Vue template |
 | Go tests failed to compile while `npm run build` was running in parallel because frontend embed assets were temporarily removed by the web prebuild step | Phase 129 first verification | Let the frontend build finish, then reran Go tests sequentially; do not parallelize Go compilation with the frontend build in this repository |
+| MOD tab rendered blank when no MOD rows existed | Phase 130 user report | `GET /api/mods` encoded a nil slice as `null`, and the Vue template expected `mods.length`; initialized backend list responses to `[]`, added frontend null coercion, and covered the empty-list response |

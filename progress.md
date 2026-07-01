@@ -1089,3 +1089,12 @@
 - Verification: `go test ./internal/app -run 'TestWorkshopModDownload|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
 - Verification: `go test ./...` passed.
 - Marked Phase 129 complete in `task_plan.md`.
+- Committed and pushed `b89ed59 Add Steam Workshop mod downloads`.
+- GitHub Actions run `28498377556` (`Docker GHCR`) completed successfully in 1m50s. Build logs confirmed pushed tags `ghcr.io/ksamni/palpanel-lite:main`, `ghcr.io/ksamni/palpanel-lite:latest`, and `ghcr.io/ksamni/palpanel-lite:sha-b89ed59` with digest `sha256:a885c03bb3eb982440d0ab74d9ac6b4f65cedac8b08564454da3fd8686be0320`.
+- Restarted the local backend with `.tmp/palpanel-phase129.exe` on `127.0.0.1:8080`; `/api/health` returned `ok`.
+- User reported the MOD tab was blank. Diagnosed the likely cause as empty MOD databases serializing `GET /api/mods` as JSON `null`, while the Vue template expects `mods.length`.
+- Added Phase 130 and fixed the empty-list contract: backend `listMods` now initializes the response slice so empty results encode as `[]`, and the frontend `loadMods` defensively coerces a null response to `[]`.
+- Added focused coverage proving `GET /api/mods` returns `[]` when no MODs are installed.
+- Verification: `go test ./internal/app -run 'TestListModsReturnsEmptyArrayWhenNoModsInstalled|TestWorkshopModDownload|TestModUploadEnableDisableDeleteRoutes' -count=1 -v` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.

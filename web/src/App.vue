@@ -1635,7 +1635,8 @@ async function deleteBackup(id: number) {
 async function loadMods() {
   modBusy.value = true
   try {
-    mods.value = await apiGet<ModRecord[]>('/api/mods')
+    const loadedMods = await apiGet<ModRecord[] | null>('/api/mods')
+    mods.value = Array.isArray(loadedMods) ? loadedMods : []
   } catch (err) {
     message.error((err as Error).message)
   } finally {
