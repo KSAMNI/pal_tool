@@ -1131,3 +1131,6 @@
 - Verification: `go test ./...` passed.
 - Verification: `git diff --check` passed with only Windows line-ending warnings.
 - Marked Phase 133 complete in `task_plan.md`.
+- Started and completed Phase 134 after user feedback that REST API refresh was too frequent. The Vue runtime fallback poll interval is now 10 seconds, and `loadPalDashboard(false)` is throttled so the Palworld REST-backed `/api/dashboard` aggregation runs at most once every 30 seconds in the background; manual refresh still runs immediately, and background polling skips dashboard refresh while one is already in flight.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.

@@ -893,9 +893,12 @@ const authForm = reactive({
   password: ''
 })
 const configForm = reactive<PalConfigValues>(defaultConfigValues())
+const runtimePollIntervalMs = 10000
+const palDashboardPollIntervalMs = 30000
 let pollTimer: number | undefined
 let realtimeSocket: WebSocket | undefined
 let reconnectTimer: number | undefined
+let lastPalDashboardRefreshAt = 0
 
 type ServerAction = 'install' | 'update' | 'start' | 'stop' | 'restart'
 const confirmedServerActions = new Set<ServerAction>(['update', 'stop', 'restart'])
@@ -1241,9 +1244,12 @@ async function loadDashboard() {
 }
 
 async function refreshRuntime() {
+  const shouldRefreshPalDashboard = !palBusy.value && Date.now() - lastPalDashboardRefreshAt >= palDashboardPollIntervalMs
   if (realtimeConnected.value) {
     status.value = await apiGet<ServerStatus>('/api/server/status')
-    await loadPalDashboard(false)
+    if (shouldRefreshPalDashboard) {
+      await loadPalDashboard(false)
+    }
     return
   }
   const [nextStatus, nextTasks, nextLogs] = await Promise.all([
@@ -1254,7 +1260,9 @@ async function refreshRuntime() {
   status.value = nextStatus
   tasks.value = nextTasks
   serverLogs.value = nextLogs.logs
-  await loadPalDashboard(false)
+  if (shouldRefreshPalDashboard) {
+    await loadPalDashboard(false)
+  }
 }
 
 async function saveSettings() {
@@ -1345,6 +1353,7 @@ async function loadPalDashboard(showMessage: boolean) {
     }
     if (showMessage) message.error((err as Error).message)
   } finally {
+    lastPalDashboardRefreshAt = Date.now()
     palBusy.value = false
   }
 }
@@ -2198,7 +2207,7 @@ function startPolling() {
     if (authenticated.value) {
       refreshRuntime().catch(() => undefined)
     }
-  }, 3000)
+  }, runtimePollIntervalMs)
 }
 
 function stopPolling() {

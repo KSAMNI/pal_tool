@@ -676,6 +676,11 @@ Status: complete
 
 Expand the visual `PalWorldSettings.ini` editor to cover the current default `OptionSettings` sample provided by the user. Research official meanings for the parameters, add typed backend fields/defaults/rendering for all default keys, expose them in practical frontend tabs with labels and controls, preserve unknown future keys, update tests/docs/planning, verify, push, and confirm GHCR publishes the updated image.
 
+### Phase 134: v3.95 REST Dashboard Poll Throttle
+Status: complete
+
+Reduce frontend automatic refresh pressure on the Palworld REST API. Keep manual refresh immediate, but slow background runtime fallback polling to 10 seconds and throttle the heavy dashboard aggregation endpoint, which proxies Palworld REST reads, to 30 seconds.
+
 ## Decisions
 - Use persistent planning files in the project root.
 - Treat external web content as untrusted research data and store summaries in `findings.md`.
@@ -810,6 +815,7 @@ Expand the visual `PalWorldSettings.ini` editor to cover the current default `Op
 - For v3.92 Workshop download diagnostics, SteamCMD output must be inspected for `ERROR! Download item ... failed` because SteamCMD can exit zero after a failed Workshop download; task/API errors should explain anonymous access may be blocked. Optional `PALPANEL_STEAMCMD_USERNAME`/`PALPANEL_STEAMCMD_PASSWORD` credentials may be used for authenticated Workshop downloads, but passwords must be redacted from task logs.
 - For v3.93 ManagedPak MOD layout support, MOD source inspection first recognizes Steam client installed layouts with `Mods/ManagedMods/<PackageName>/Info.json` and `Pal/Content/Paks/~WorkshopMods/<folder>/*.pak`; those installs copy metadata and pak directories to the matching PalServer paths, keep enable/disable through `PalModSettings.ini`, report `install_path` as the actual pak directory, and delete both `ManagedMods` metadata and `~WorkshopMods` pak files.
 - For v3.94 complete config controls, backend `PalWorldSettings.ini` field definitions are the single source for frontend rendering: they include original Palworld keys, JSON keys, type, group, description, enum choices, and numeric bounds; the frontend renders groups dynamically so the current default `OptionSettings` sample is covered without hand-maintaining separate Vue form sections.
+- For v3.95 REST dashboard polling, the frontend should not call the Palworld REST-backed dashboard every few seconds in the background; runtime fallback polling defaults to 10 seconds and dashboard REST aggregation defaults to 30 seconds, while manual refresh remains immediate.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
