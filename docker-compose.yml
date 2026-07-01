@@ -4,11 +4,13 @@ services:
     restart: unless-stopped
     init: true
     stop_grace_period: 60s
-    user: "${PALPANEL_UID:-10001}:${PALPANEL_GID:-10001}"
     environment:
       HOME: /data
       PALPANEL_ADDR: 0.0.0.0:8080
       PALPANEL_DATA_DIR: /data
+      PALPANEL_UID: ${PALPANEL_UID:-10001}
+      PALPANEL_GID: ${PALPANEL_GID:-10001}
+      PALPANEL_FIX_OWNERSHIP: ${PALPANEL_FIX_OWNERSHIP:-true}
       PALPANEL_STEAMCMD_DIR: ${PALPANEL_STEAMCMD_DIR:-/data/steamcmd}
       PALPANEL_DEFAULT_PAL_SERVER_PATH: ${PALPANEL_DEFAULT_PAL_SERVER_PATH:-/palserver}
       PALPANEL_PAL_SERVER_PATH: /palserver
@@ -19,8 +21,12 @@ services:
       - "127.0.0.1:${PALPANEL_PORT:-8080}:8080"
       - "${PALWORLD_GAME_HOST_PORT:-8211}:${PALWORLD_GAME_PORT:-8211}/udp"
     volumes:
-      - ${PALPANEL_DATA_DIR:-./data}:/data
-      - ${PALPANEL_SERVER_DIR:-./PalServer}:/palserver
+      - type: bind
+        source: ${PALPANEL_DATA_DIR:-./data}
+        target: /data
+      - type: bind
+        source: ${PALPANEL_SERVER_DIR:-./PalServer}
+        target: /palserver
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
       interval: 30s

@@ -76,7 +76,6 @@ Docker/Compose is the preferred deployment path:
 ```bash
 cp .env.example .env
 mkdir -p data PalServer
-sudo chown -R 10001:10001 data PalServer
 docker compose --env-file .env up -d
 ```
 
@@ -97,10 +96,10 @@ Default Compose behavior:
 - Mounts the Palworld server directory at `./PalServer`.
 - Seeds a fresh panel database with `pal_server_path=/palserver`; existing settings are not overwritten on container restarts.
 - Includes SteamCMD through `/usr/local/bin/steamcmd`; inside the container, leave `steamcmd_path` empty so the panel detects it from `PATH`.
-- Stores SteamCMD's mutable runtime files under `/data/steamcmd` by default, so they persist in the panel data volume and remain writable when `PALPANEL_UID`/`PALPANEL_GID` are customized.
-- Sets the container home directory to `/data` so SteamCMD and Steam runtime user files such as `~/.steam` stay on the writable data volume.
+- Stores SteamCMD's mutable runtime files under `/data/steamcmd` by default, so they persist in the bind-mounted `./data` directory and remain writable when `PALPANEL_UID`/`PALPANEL_GID` are customized.
+- Sets the container home directory to `/data` so SteamCMD and Steam runtime user files such as `~/.steam` stay under the bind-mounted `./data` directory.
 - Runs with Compose `init: true` and a 60-second stop grace period so the panel can stop a panel-managed PalServer cleanly and child processes are reaped.
-- Runs the container as UID/GID `10001` by default.
+- Starts as root only long enough to create/fix ownership for `/data`, `/palserver`, and `/data/steamcmd`, then runs the panel as UID/GID `10001` by default.
 
 The Docker runtime image is currently intended for Linux amd64 hosts because SteamCMD and Palworld Dedicated Server are x86_64 targets.
 Palworld REST/RCON ports are not published by the default Compose file; access those operations through the panel backend instead of exposing them directly.
@@ -115,6 +114,7 @@ Palworld REST/RCON ports are not published by the default Compose file; access t
 - `PALPANEL_STEAMCMD_DIR` for SteamCMD's in-container writable state directory.
 - `PALPANEL_DEFAULT_PAL_SERVER_PATH` for the initial persisted `pal_server_path` in a fresh panel database.
 - `PALPANEL_UID` and `PALPANEL_GID` for the container user.
+- `PALPANEL_FIX_OWNERSHIP` to enable or disable startup ownership repair for mounted data directories.
 - `TZ` for container timezone.
 
 The root `docker-compose.yml` uses `./data` and `./PalServer` by default. Use absolute paths for production directories:
@@ -129,6 +129,7 @@ PALPANEL_STEAMCMD_DIR=/data/steamcmd
 PALPANEL_DEFAULT_PAL_SERVER_PATH=/palserver
 PALPANEL_UID=10001
 PALPANEL_GID=10001
+PALPANEL_FIX_OWNERSHIP=true
 TZ=Asia/Hong_Kong
 ```
 

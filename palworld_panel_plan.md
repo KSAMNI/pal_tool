@@ -326,8 +326,8 @@ Palworld REST API：
 
 目标：
 - 一个可执行文件启动。
-- 提供 Dockerfile / Compose 部署路径，并把它作为最终推荐部署方式：面板镜像内构建 Vue 前端和 Go 单文件，运行时挂载 `/data` 保存面板状态，挂载 `/palserver` 作为 Palworld 服务端目录。
-- Docker 运行镜像必须内置 SteamCMD 并把 `steamcmd` 放入 `PATH`，这样容器部署下 `steamcmd_path` 可留空，面板仍能执行安装和更新；SteamCMD 自更新和缓存这类可变状态必须放在 `/data/steamcmd` 这类数据卷目录下，容器 `HOME` 也必须指向可写的 `/data`，避免 SteamCMD/Steam 运行时用户状态写到不可写目录；该镜像当前按 Linux amd64 目标处理。
+- 提供 Dockerfile / Compose 部署路径，并把它作为最终推荐部署方式：面板镜像内构建 Vue 前端和 Go 单文件，运行时通过当前目录 bind mount 挂载 `./data` 到 `/data` 保存面板状态，挂载 `./PalServer` 到 `/palserver` 作为 Palworld 服务端目录；不依赖 Docker named volume 或匿名 volume 保存核心数据。
+- Docker 运行镜像必须内置 SteamCMD 并把 `steamcmd` 放入 `PATH`，这样容器部署下 `steamcmd_path` 可留空，面板仍能执行安装和更新；SteamCMD 自更新和缓存这类可变状态必须放在 bind-mounted `/data/steamcmd` 目录下，容器 `HOME` 也必须指向可写的 `/data`，避免 SteamCMD/Steam 运行时用户状态写到不可写目录；该镜像当前按 Linux amd64 目标处理。
 - GitHub Actions 负责在 GitHub 托管 runner 上构建并发布 Linux amd64 镜像到 GHCR，镜像名使用 `ghcr.io/<lowercase-owner>/palpanel-lite`，Compose 通过 `PALPANEL_IMAGE` 覆盖完整镜像引用。
 - Compose 默认发布 Palworld 游戏 UDP 端口，变量必须能覆盖宿主机端口和容器内游戏端口；Palworld REST/RCON 端口默认不发布到宿主机，相关操作通过面板后端代理。
 - Docker/Compose 首次初始化空面板数据库时应通过 `PALPANEL_DEFAULT_PAL_SERVER_PATH=/palserver` 预填 `pal_server_path`，让容器内安装专服不需要用户手动输入挂载路径；已有 SQLite 设置不能被该环境变量覆盖。

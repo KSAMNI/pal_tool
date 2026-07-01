@@ -1057,3 +1057,10 @@
 - GitHub Actions run `28494285020` (`Docker GHCR`) completed successfully in 1m56s. Build logs confirm pushed tags `ghcr.io/ksamni/palpanel-lite:main`, `ghcr.io/ksamni/palpanel-lite:latest`, and `ghcr.io/ksamni/palpanel-lite:sha-9bd8f7d` with digest `sha256:d1e7c70fdb8719d25b5b644c2e559a974fd2f31c815bc17c1484f35a8009c0f9`.
 - Direct GHCR package API lookup with the current `gh` token returned 403 because the token lacks `read:packages`; this does not affect the completed workflow publish, and tags/digest were confirmed from the successful Actions logs.
 - Marked Phase 125 complete in `task_plan.md`.
+- User reported repeated container startup failure: `init app: unable to open database file: out of memory (14)`. Diagnosed this as SQLite failing to open `/data/app.db`, most likely because root-owned host bind mounts were being used with a container process forced to UID/GID 10001 by Compose.
+- Started Phase 126 to repair bind-mount ownership in the Docker entrypoint before dropping privileges, so the GHCR image is easier to run with default root-created bind directories.
+- Adjusted the deployment fix to match the desired persistence model: root `docker-compose.yml` and `deploy/compose.yaml` now use explicit `type: bind` mappings for current-folder data directories, and the Dockerfile `VOLUME ["/data", "/palserver"]` declaration was removed to avoid anonymous Docker volumes.
+- Added `docker-entrypoint.sh`, installed `gosu` in the runtime image, removed Compose `user:` overrides, and passed `PALPANEL_UID`, `PALPANEL_GID`, and `PALPANEL_FIX_OWNERSHIP` through the Compose environment. The entrypoint creates `/data`, `/palserver`, and SteamCMD state, repairs ownership when enabled, then runs `palpanel` as the configured non-root user.
+- Static deployment checks passed for no Dockerfile `VOLUME`, no Compose `user:`, explicit bind mounts, GHCR image use, and ownership-repair environment wiring. Docker CLI remains unavailable locally, so the actual image build is deferred to GitHub Actions.
+- Verification: `go test ./...` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.

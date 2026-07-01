@@ -38,7 +38,7 @@ RUN if [ "${TARGETARCH}" != "amd64" ]; then \
         exit 1; \
     fi \
     && apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl gzip lib32gcc-s1 lib32stdc++6 tar tzdata \
+    && apt-get install -y --no-install-recommends ca-certificates curl gosu gzip lib32gcc-s1 lib32stdc++6 tar tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd --system --uid 10001 --home-dir /data --no-create-home palpanel \
@@ -62,22 +62,24 @@ RUN mkdir -p /usr/local/share/steamcmd \
     && chmod 0755 /usr/local/bin/steamcmd
 
 COPY --from=go-build /out/palpanel /usr/local/bin/palpanel
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
 
 ENV HOME=/data \
     PALPANEL_ADDR=0.0.0.0:8080 \
     PALPANEL_DATA_DIR=/data \
+    PALPANEL_FIX_OWNERSHIP=true \
     PALPANEL_STEAMCMD_DIR=/data/steamcmd \
     PALPANEL_DEFAULT_PAL_SERVER_PATH=/palserver \
     PALPANEL_PAL_SERVER_PATH=/palserver \
     PALWORLD_SERVER_PATH=/palserver \
     PAL_SERVER_PATH=/palserver
 
-USER palpanel
 WORKDIR /data
 EXPOSE 8080
-VOLUME ["/data", "/palserver"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fsS http://127.0.0.1:8080/api/health || exit 1
 
-ENTRYPOINT ["/usr/local/bin/palpanel"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["/usr/local/bin/palpanel"]
