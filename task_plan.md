@@ -667,7 +667,7 @@ Status: complete
 Improve Steam Workshop download diagnostics when SteamCMD reports `ERROR! Download item ... failed (Failure)` but exits successfully, and support optional env-based Steam account credentials for Workshop items that anonymous SteamCMD cannot download.
 
 ### Phase 132: v3.93 ManagedMods Workshop Pak Layout
-Status: in_progress
+Status: complete
 
 Support Steam client/game-managed Workshop MOD layouts where metadata is under `Mods/ManagedMods/<PackageName>/Info.json` and pak files are under `Pal/Content/Paks/~WorkshopMods/<PackageName>/`. Install this layout into the matching PalServer directories, preserve the existing backup-guarded MOD pipeline, allow enable/disable/delete to work with the installed pak layout, add focused backend tests, push, and confirm GHCR publishes the updated image.
 
