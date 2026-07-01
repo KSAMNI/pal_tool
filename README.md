@@ -77,16 +77,16 @@ Docker/Compose is the preferred deployment path:
 cp .env.example .env
 mkdir -p data PalServer
 sudo chown -R 10001:10001 data PalServer
-docker compose --env-file .env -f deploy/compose.yaml up -d --build
+docker compose --env-file .env up -d
 ```
 
 The GitHub Actions workflow publishes the runtime image to GHCR on pushes to
-`main`, version tags matching `v*`, and manual dispatches. Use the published
-image by setting `PALPANEL_IMAGE` and running Compose without `--build`:
+`main`, version tags matching `v*`, and manual dispatches. The root
+`docker-compose.yml` pulls the published image by default:
 
 ```bash
-PALPANEL_IMAGE=ghcr.io/<owner>/palpanel-lite:latest
-docker compose --env-file .env -f deploy/compose.yaml up -d
+PALPANEL_IMAGE=ghcr.io/ksamni/palpanel-lite:latest
+docker compose --env-file .env up -d
 ```
 
 Default Compose behavior:
@@ -107,8 +107,8 @@ Palworld REST/RCON ports are not published by the default Compose file; access t
 
 `.env` is ignored by Git and is the intended place for local deployment overrides. The checked-in `.env.example` includes:
 
-- `PALPANEL_VERSION` for the image tag and embedded build version.
 - `PALPANEL_IMAGE` for the full Compose image reference, including GHCR images.
+- `PALPANEL_VERSION` for the embedded build version when using `deploy/compose.yaml` for local builds.
 - `PALPANEL_PORT` for the localhost panel port.
 - `PALWORLD_GAME_HOST_PORT` and `PALWORLD_GAME_PORT` for the UDP game port mapping.
 - `PALPANEL_DATA_DIR` and `PALPANEL_SERVER_DIR` for bind mounts.
@@ -117,7 +117,7 @@ Palworld REST/RCON ports are not published by the default Compose file; access t
 - `PALPANEL_UID` and `PALPANEL_GID` for the container user.
 - `TZ` for container timezone.
 
-The example uses `../data` and `../PalServer` because relative bind paths are resolved from `deploy/compose.yaml`; use absolute paths for production directories:
+The root `docker-compose.yml` uses `./data` and `./PalServer` by default. Use absolute paths for production directories:
 
 ```bash
 PALPANEL_PORT=18080
