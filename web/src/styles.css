@@ -546,6 +546,10 @@ body {
   word-break: break-word;
 }
 
+.log-grid .log-box {
+  height: 700px;
+}
+
 @media (max-width: 820px) {
   .shell {
     padding: 16px;
