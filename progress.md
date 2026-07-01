@@ -1117,3 +1117,17 @@
 - Committed and pushed `40ae04c Support managed Workshop pak mods`.
 - GitHub Actions run `28501147457` (`Docker GHCR`) completed successfully in 1m50s. Build logs confirm pushed tags `ghcr.io/ksamni/palpanel-lite:main`, `ghcr.io/ksamni/palpanel-lite:latest`, and `ghcr.io/ksamni/palpanel-lite:sha-40ae04c` with digest `sha256:632343752b5a658b584328f60f2197abae4490450159e6484f11601e6ed3e0fb`.
 - Marked Phase 132 complete in `task_plan.md`.
+- Started Phase 133 after the user provided the current default `OptionSettings` sample and asked to query each setting's meaning and complete the frontend configuration controls.
+- Official configuration docs were fetched through Jina Reader and confirm the current parameter groups: Performances, Server management, Features, and Game balances. The current backend/fronted cover only a subset, so Phase 133 will add typed fields for the rest while preserving unknown future keys.
+- Implemented Phase 133 backend expansion: `defaultPalWorldSettings` now matches the current default sample, `palConfigValues` covers every key in that sample, field definitions include original key/type/group/description/options/bounds, `knownConfigKeys` derives from those definitions, current `PalEggDefaultHatchingTime` writes replace legacy `EggDefaultHatchingTime`, and focused tests prove all default keys are represented plus representative new fields round-trip.
+- Implemented Phase 133 frontend expansion: the config tab now renders groups dynamically from backend `fields`, supports bool/int/float/enum/password/textarea/raw controls, shows field meanings through info tooltips, and uses a dynamic `PalConfigValues` record instead of a hand-maintained subset interface.
+- Verification: `go test ./internal/app -run 'TestDefaultPalConfigFieldsCoverCurrentOptionSettings|TestPalConfigCurrentDefaultFieldsRoundTrip|TestPalConfigPerformanceFieldsApplyConservativeLimits|TestConfigRoutes' -count=1 -v` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed after the frontend build.
+- Tightened Phase 133 config rendering after review: raw empty list fields such as `DenyTechnologyList=` now remain raw-empty instead of becoming `""`, and legacy `EggDefaultHatchingTime` migration cannot render a leading comma.
+- Added focused regression coverage for empty raw list preservation and legacy hatching-key migration; the first assertion matched the new `PalEggDefaultHatchingTime` key too broadly and was corrected.
+- Verification: `go test ./internal/app -run 'TestDefaultPalConfigFieldsCoverCurrentOptionSettings|TestPalConfigCurrentDefaultFieldsRoundTrip|TestPalConfigLegacyEggHatchingFieldDoesNotRenderLeadingComma|TestPalConfigPerformanceFieldsApplyConservativeLimits|TestConfigRoutes' -count=1 -v` passed.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `go test ./...` passed.
+- Verification: `git diff --check` passed with only Windows line-ending warnings.
+- Marked Phase 133 complete in `task_plan.md`.

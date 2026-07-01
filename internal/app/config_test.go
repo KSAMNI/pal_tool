@@ -145,6 +145,111 @@ func TestPalConfigPerformanceFieldsApplyConservativeLimits(t *testing.T) {
 	}
 }
 
+func TestDefaultPalConfigFieldsCoverCurrentOptionSettings(t *testing.T) {
+	_, _, optionText, err := findOptionSettings(defaultPalWorldSettings)
+	if err != nil {
+		t.Fatalf("findOptionSettings() error = %v", err)
+	}
+	_, raw, err := parseOptionSettings(optionText)
+	if err != nil {
+		t.Fatalf("parseOptionSettings() error = %v", err)
+	}
+	known := map[string]bool{}
+	for _, key := range knownConfigKeys() {
+		if known[key] {
+			t.Fatalf("duplicate known config key: %s", key)
+		}
+		known[key] = true
+	}
+	for key := range raw {
+		if !known[key] {
+			t.Fatalf("default config key %s is not represented in knownConfigKeys", key)
+		}
+	}
+}
+
+func TestPalConfigCurrentDefaultFieldsRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "PalWorldSettings.ini")
+	if err := os.WriteFile(configPath, []byte(defaultPalWorldSettings), 0o644); err != nil {
+		t.Fatalf("write default config: %v", err)
+	}
+	doc, err := readPalConfigDocument(configPath, configPath, "LinuxServer")
+	if err != nil {
+		t.Fatalf("readPalConfigDocument() error = %v", err)
+	}
+	if doc.Values.RandomizerType != "None" {
+		t.Fatalf("RandomizerType = %q, want None", doc.Values.RandomizerType)
+	}
+	if !doc.Values.EnableFastTravel {
+		t.Fatalf("EnableFastTravel = false, want true")
+	}
+	if doc.Values.BanListURL != "https://b.palworldgame.com/api/banlist.txt" {
+		t.Fatalf("BanListURL = %q", doc.Values.BanListURL)
+	}
+	unchanged := doc.render(doc.rawWithValues(doc.Values))
+	if !strings.Contains(unchanged, `DenyTechnologyList=,GuildRejoinCooldownMinutes=0`) {
+		t.Fatalf("unchanged render did not preserve empty DenyTechnologyList as a raw empty value: %s", unchanged)
+	}
+
+	nextValues := doc.Values
+	nextValues.RandomizerType = "All"
+	nextValues.RandomizerSeed = "seed-1337"
+	nextValues.IsRandomizerPalLevelRandom = true
+	nextValues.PalDamageRateAttack = 2.5
+	nextValues.PlayerStomachDecreaseRate = 0.5
+	nextValues.EnableFastTravel = false
+	nextValues.EggDefaultHatchingTime = 12
+	nextValues.DenyTechnologyList = `("PALBOX","RepairBench")`
+	nextValues.AdditionalDropItemWhenPlayerKillingInPvPEnabled = true
+	nextValues.AllowEnhanceStatAttack = false
+
+	rendered := doc.render(doc.rawWithValues(nextValues))
+	for _, want := range []string{
+		`RandomizerType=All`,
+		`RandomizerSeed="seed-1337"`,
+		`bIsRandomizerPalLevelRandom=True`,
+		`PalDamageRateAttack=2.500000`,
+		`PlayerStomachDecreaceRate=0.500000`,
+		`bEnableFastTravel=False`,
+		`PalEggDefaultHatchingTime=12.000000`,
+		`DenyTechnologyList=("PALBOX","RepairBench")`,
+		`bAdditionalDropItemWhenPlayerKillingInPvPMode=True`,
+		`bAllowEnhanceStat_Attack=False`,
+	} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered config missing %q: %s", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "(EggDefaultHatchingTime=") || strings.Contains(rendered, ",EggDefaultHatchingTime=") {
+		t.Fatalf("rendered config kept legacy EggDefaultHatchingTime key: %s", rendered)
+	}
+}
+
+func TestPalConfigLegacyEggHatchingFieldDoesNotRenderLeadingComma(t *testing.T) {
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "PalWorldSettings.ini")
+	if err := os.WriteFile(configPath, []byte(`[/Script/Pal.PalGameWorldSettings]
+OptionSettings=(EggDefaultHatchingTime=72.000000)
+`), 0o644); err != nil {
+		t.Fatalf("write legacy config: %v", err)
+	}
+	doc, err := readPalConfigDocument(configPath, configPath, "LinuxServer")
+	if err != nil {
+		t.Fatalf("readPalConfigDocument() error = %v", err)
+	}
+	rendered := doc.render(doc.rawWithValues(doc.Values))
+	if strings.Contains(rendered, "OptionSettings=(,") {
+		t.Fatalf("rendered config has a leading comma after legacy field migration: %s", rendered)
+	}
+	if strings.Contains(rendered, "OptionSettings=(EggDefaultHatchingTime=") || strings.Contains(rendered, ",EggDefaultHatchingTime=") {
+		t.Fatalf("rendered config kept legacy EggDefaultHatchingTime key: %s", rendered)
+	}
+	if !strings.Contains(rendered, "PalEggDefaultHatchingTime=72.000000") {
+		t.Fatalf("rendered config missing current PalEggDefaultHatchingTime key: %s", rendered)
+	}
+}
+
 func TestAtomicWriteFileFailedReplaceKeepsOriginalAndRemovesTemp(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "PalWorldSettings.ini")

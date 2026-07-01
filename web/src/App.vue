@@ -537,145 +537,62 @@
               </n-descriptions>
 
               <n-tabs type="line" animated>
-                <n-tab-pane name="basic" tab="基础">
+                <n-tab-pane
+                  v-for="group in configFieldGroups"
+                  :key="group.name"
+                  :name="group.name"
+                  :tab="group.name"
+                >
                   <div class="config-grid">
-                    <n-form-item label="服务器名称">
-                      <n-input v-model:value="configForm.server_name" />
-                    </n-form-item>
-                    <n-form-item label="最大玩家数">
-                      <n-input-number v-model:value="configForm.server_player_max_num" :min="1" :max="64" />
-                    </n-form-item>
-                    <n-form-item label="管理员密码">
-                      <n-input v-model:value="configForm.admin_password" type="password" show-password-on="click" />
-                    </n-form-item>
-                    <n-form-item label="服务器密码">
-                      <n-input v-model:value="configForm.server_password" type="password" show-password-on="click" />
-                    </n-form-item>
-                    <n-form-item label="服务器描述" class="span-2">
-                      <n-input v-model:value="configForm.server_description" type="textarea" :autosize="{ minRows: 2 }" />
-                    </n-form-item>
-                  </div>
-                </n-tab-pane>
-
-                <n-tab-pane name="rates" tab="倍率">
-                  <div class="config-grid">
-                    <n-form-item label="经验倍率">
-                      <n-input-number v-model:value="configForm.exp_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="捕获倍率">
-                      <n-input-number v-model:value="configForm.pal_capture_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="帕鲁刷新倍率">
-                      <n-input-number v-model:value="configForm.pal_spawn_num_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="敌人掉落倍率">
-                      <n-input-number v-model:value="configForm.enemy_drop_item_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="采集掉落倍率">
-                      <n-input-number v-model:value="configForm.collection_drop_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="采集物生命倍率">
-                      <n-input-number v-model:value="configForm.collection_object_hp_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="采集物刷新倍率">
-                      <n-input-number v-model:value="configForm.collection_object_respawn_speed_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                  </div>
-                </n-tab-pane>
-
-                <n-tab-pane name="world" tab="世界">
-                  <div class="config-grid">
-                    <n-form-item label="难度">
-                      <n-select v-model:value="configForm.difficulty" :options="difficultyOptions" />
-                    </n-form-item>
-                    <n-form-item label="死亡惩罚">
-                      <n-select v-model:value="configForm.death_penalty" :options="deathPenaltyOptions" />
-                    </n-form-item>
-                    <n-form-item label="白天速度">
-                      <n-input-number v-model:value="configForm.day_time_speed_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="夜晚速度">
-                      <n-input-number v-model:value="configForm.night_time_speed_rate" :min="0.1" :step="0.1" />
-                    </n-form-item>
-                    <n-form-item label="孵蛋时间">
-                      <n-input-number v-model:value="configForm.egg_default_hatching_time" :min="0" :step="1" />
-                    </n-form-item>
-                    <n-form-item label="据点总数">
-                      <n-input-number v-model:value="configForm.base_camp_max_num" :min="1" :step="1" />
-                    </n-form-item>
-                    <n-form-item label="公会据点上限">
-                      <n-input-number v-model:value="configForm.base_camp_max_num_in_guild" :min="1" :max="10" :step="1" />
-                    </n-form-item>
-                    <n-form-item label="据点工作帕鲁数">
-                      <n-input-number v-model:value="configForm.base_camp_worker_max_num" :min="1" :max="50" :step="1" />
-                    </n-form-item>
-                    <n-form-item label="公会人数">
-                      <n-input-number v-model:value="configForm.guild_player_max_num" :min="1" :step="1" />
-                    </n-form-item>
-                    <n-form-item label="建筑数量上限">
-                      <n-input-number v-model:value="configForm.max_building_limit_num" :min="0" :step="100" />
-                    </n-form-item>
-                    <n-form-item label="帕鲁同步距离">
-                      <n-input-number v-model:value="configForm.server_replicate_pawn_cull_distance" :min="5000" :max="15000" :step="500" />
-                    </n-form-item>
-                    <n-form-item label="建筑退化倍率">
-                      <n-input-number v-model:value="configForm.build_object_deterioration_damage_rate" :min="0" :step="0.1" />
-                    </n-form-item>
-                  </div>
-                </n-tab-pane>
-
-                <n-tab-pane name="network" tab="网络">
-                  <div class="config-grid">
-                    <n-form-item label="Public IP">
-                      <n-input v-model:value="configForm.public_ip" />
-                    </n-form-item>
-                    <n-form-item label="Public Port">
-                      <n-input-number v-model:value="configForm.public_port" :min="1" :max="65535" />
-                    </n-form-item>
-                    <n-form-item label="REST API Port">
-                      <n-input-number v-model:value="configForm.rest_api_port" :min="1" :max="65535" />
-                    </n-form-item>
-                    <n-form-item label="RCON Port">
-                      <n-input-number v-model:value="configForm.rcon_port" :min="1" :max="65535" />
-                    </n-form-item>
-                  </div>
-                </n-tab-pane>
-
-                <n-tab-pane name="advanced" tab="高级">
-                  <div class="config-grid">
-                    <div class="switch-row">
-                      <span>REST API</span>
-                      <n-switch v-model:value="configForm.rest_api_enabled" />
-                    </div>
-                    <div class="switch-row">
-                      <span>RCON</span>
-                      <n-switch v-model:value="configForm.rcon_enabled" />
-                    </div>
-                    <div class="switch-row">
-                      <span>官方自动备份</span>
-                      <n-switch v-model:value="configForm.is_use_backup_save_data" />
-                    </div>
-                    <div class="switch-row">
-                      <span>允许客户端 MOD</span>
-                      <n-switch v-model:value="configForm.allow_client_mod" />
-                    </div>
-                    <div class="switch-row">
-                      <span>PvP</span>
-                      <n-switch v-model:value="configForm.is_pvp" />
-                    </div>
-                    <div class="switch-row">
-                      <span>玩家互伤</span>
-                      <n-switch v-model:value="configForm.enable_player_to_player_damage" />
-                    </div>
-                    <div class="switch-row">
-                      <span>据点防御其他公会玩家</span>
-                      <n-switch v-model:value="configForm.enable_defense_other_guild_player" />
-                    </div>
-                    <n-form-item label="日志格式">
-                      <n-select v-model:value="configForm.log_format_type" :options="logFormatOptions" />
-                    </n-form-item>
-                    <n-form-item label="跨平台连接">
-                      <n-input v-model:value="configForm.crossplay_platforms" />
+                    <n-form-item
+                      v-for="field in group.fields"
+                      :key="field.key"
+                      :class="{ 'span-2': field.type === 'textarea' || field.type === 'raw' }"
+                    >
+                      <template #label>
+                        <span class="config-field-label">
+                          {{ field.label }}
+                          <n-tooltip v-if="field.description" trigger="hover">
+                            <template #trigger>
+                              <Info :size="14" class="config-field-info" />
+                            </template>
+                            {{ field.description }}
+                          </n-tooltip>
+                        </span>
+                      </template>
+                      <n-switch
+                        v-if="field.type === 'bool'"
+                        v-model:value="configForm[field.key]"
+                      />
+                      <n-input-number
+                        v-else-if="field.type === 'int' || field.type === 'float'"
+                        v-model:value="configForm[field.key]"
+                        :min="field.min"
+                        :max="field.max"
+                        :step="field.step ?? (field.type === 'int' ? 1 : 0.1)"
+                        :precision="field.type === 'int' ? 0 : undefined"
+                      />
+                      <n-select
+                        v-else-if="field.type === 'enum'"
+                        v-model:value="configForm[field.key]"
+                        :options="field.options ?? []"
+                      />
+                      <n-input
+                        v-else-if="field.type === 'password'"
+                        v-model:value="configForm[field.key]"
+                        type="password"
+                        show-password-on="click"
+                      />
+                      <n-input
+                        v-else-if="field.type === 'textarea'"
+                        v-model:value="configForm[field.key]"
+                        type="textarea"
+                        :autosize="{ minRows: 2 }"
+                      />
+                      <n-input
+                        v-else
+                        v-model:value="configForm[field.key]"
+                      />
                     </n-form-item>
                   </div>
                 </n-tab-pane>
@@ -913,9 +830,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { Archive, Download, FileText, FolderOpen, LogOut, Megaphone, Play, Power, PowerOff, RefreshCw, RotateCcw, RotateCw, Save, Square, Trash2, Upload } from 'lucide-vue-next'
+import { Archive, Download, FileText, FolderOpen, Info, LogOut, Megaphone, Play, Power, PowerOff, RefreshCw, RotateCcw, RotateCw, Save, Square, Trash2, Upload } from 'lucide-vue-next'
 import { createDiscreteApi } from 'naive-ui'
-import { ApiError, apiDelete, apiGet, apiPost, apiPut, apiUpload, type AuthState, type BackupRecord, type ModRecord, type OpenDirectoryResponse, type PalDashboard, type PalConfigPayload, type PalConfigValues, type PalPlayer, type RestoreResponse, type RuntimeEvent, type ServerLogs, type ServerStatus, type Settings, type SystemSummary, type TaskRecord } from './api'
+import { ApiError, apiDelete, apiGet, apiPost, apiPut, apiUpload, type AuthState, type BackupRecord, type ModRecord, type OpenDirectoryResponse, type PalDashboard, type PalConfigField, type PalConfigPayload, type PalConfigValues, type PalPlayer, type RestoreResponse, type RuntimeEvent, type ServerLogs, type ServerStatus, type Settings, type SystemSummary, type TaskRecord } from './api'
 
 const { message } = createDiscreteApi(['message'])
 
@@ -1245,21 +1162,21 @@ const recentBackupText = computed(() => {
   if (!backup) return '-'
   return `${backup.type} · ${formatBytes(backup.size)}`
 })
-const difficultyOptions = [
-  { label: 'None', value: 'None' },
-  { label: 'Normal', value: 'Normal' },
-  { label: 'Hard', value: 'Hard' }
-]
-const deathPenaltyOptions = [
-  { label: 'None', value: 'None' },
-  { label: 'Item', value: 'Item' },
-  { label: 'ItemAndEquipment', value: 'ItemAndEquipment' },
-  { label: 'All', value: 'All' }
-]
-const logFormatOptions = [
-  { label: 'Text', value: 'Text' },
-  { label: 'JSON', value: 'JSON' }
-]
+const configFieldGroups = computed(() => {
+  const groups: Array<{ name: string; fields: PalConfigField[] }> = []
+  const indexByName = new Map<string, number>()
+  for (const field of config.value?.fields ?? []) {
+    const name = field.group || '其他'
+    let index = indexByName.get(name)
+    if (index === undefined) {
+      index = groups.length
+      indexByName.set(name, index)
+      groups.push({ name, fields: [] })
+    }
+    groups[index].fields.push(field)
+  }
+  return groups
+})
 
 onMounted(async () => {
   await bootstrap()
@@ -1363,7 +1280,7 @@ async function loadConfig() {
   try {
     const nextConfig = await apiGet<PalConfigPayload>('/api/config')
     config.value = nextConfig
-    Object.assign(configForm, nextConfig.values)
+    replaceConfigForm(nextConfig.values)
     configError.value = ''
     configNotInitialized.value = false
   } catch (err) {
@@ -1389,7 +1306,7 @@ async function initConfig() {
   try {
     const nextConfig = await apiPost<PalConfigPayload>('/api/config/init')
     config.value = nextConfig
-    Object.assign(configForm, nextConfig.values)
+    replaceConfigForm(nextConfig.values)
     configError.value = ''
     configNotInitialized.value = false
     message.success('配置文件已初始化')
@@ -1545,7 +1462,7 @@ async function saveConfig() {
   try {
     const saved = await apiPut<PalConfigPayload>('/api/config', { values: configForm })
     config.value = saved
-    Object.assign(configForm, saved.values)
+    replaceConfigForm(saved.values)
     await loadBackups()
     message.success(saved.needs_restart ? '配置已保存，重启后生效' : '配置已保存')
   } catch (err) {
@@ -2291,45 +2208,14 @@ function stopPolling() {
   }
 }
 
-function defaultConfigValues(): PalConfigValues {
-  return {
-    server_name: '',
-    server_description: '',
-    admin_password: '',
-    server_password: '',
-    server_player_max_num: 32,
-    difficulty: 'None',
-    day_time_speed_rate: 1,
-    night_time_speed_rate: 1,
-    exp_rate: 1,
-    pal_capture_rate: 1,
-    pal_spawn_num_rate: 1,
-    enemy_drop_item_rate: 1,
-    collection_drop_rate: 1,
-    collection_object_hp_rate: 1,
-    collection_object_respawn_speed_rate: 1,
-    egg_default_hatching_time: 72,
-    death_penalty: 'All',
-    base_camp_max_num: 128,
-    base_camp_max_num_in_guild: 4,
-    base_camp_worker_max_num: 15,
-    guild_player_max_num: 20,
-    build_object_deterioration_damage_rate: 1,
-    max_building_limit_num: 0,
-    server_replicate_pawn_cull_distance: 15000,
-    public_port: 8211,
-    public_ip: '',
-    rcon_enabled: false,
-    rcon_port: 25575,
-    rest_api_enabled: false,
-    rest_api_port: 8212,
-    log_format_type: 'Text',
-    crossplay_platforms: '',
-    allow_client_mod: false,
-    is_pvp: false,
-    enable_player_to_player_damage: false,
-    enable_defense_other_guild_player: false,
-    is_use_backup_save_data: true
+function replaceConfigForm(values: PalConfigValues) {
+  for (const key of Object.keys(configForm)) {
+    delete configForm[key]
   }
+  Object.assign(configForm, values)
+}
+
+function defaultConfigValues(): PalConfigValues {
+  return {}
 }
 </script>

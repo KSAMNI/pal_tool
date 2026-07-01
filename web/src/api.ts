@@ -64,44 +64,28 @@ export interface ServerLogs {
   logs: ServerLogEntry[]
 }
 
+export type PalConfigValue = string | number | boolean | null
+
 export interface PalConfigValues {
-  server_name: string
-  server_description: string
-  admin_password: string
-  server_password: string
-  server_player_max_num: number
-  difficulty: string
-  day_time_speed_rate: number
-  night_time_speed_rate: number
-  exp_rate: number
-  pal_capture_rate: number
-  pal_spawn_num_rate: number
-  enemy_drop_item_rate: number
-  collection_drop_rate: number
-  collection_object_hp_rate: number
-  collection_object_respawn_speed_rate: number
-  egg_default_hatching_time: number
-  death_penalty: string
-  base_camp_max_num: number
-  base_camp_max_num_in_guild: number
-  base_camp_worker_max_num: number
-  guild_player_max_num: number
-  build_object_deterioration_damage_rate: number
-  max_building_limit_num: number
-  server_replicate_pawn_cull_distance: number
-  public_port: number
-  public_ip: string
-  rcon_enabled: boolean
-  rcon_port: number
-  rest_api_enabled: boolean
-  rest_api_port: number
-  log_format_type: string
-  crossplay_platforms: string
-  allow_client_mod: boolean
-  is_pvp: boolean
-  enable_player_to_player_damage: boolean
-  enable_defense_other_guild_player: boolean
-  is_use_backup_save_data: boolean
+  [key: string]: PalConfigValue
+}
+
+export interface PalConfigFieldOption {
+  label: string
+  value: string
+}
+
+export interface PalConfigField {
+  key: string
+  raw_key: string
+  label: string
+  group: string
+  type: string
+  description?: string
+  min?: number
+  max?: number
+  step?: number
+  options?: PalConfigFieldOption[]
 }
 
 export interface PalConfigPayload {
@@ -113,12 +97,7 @@ export interface PalConfigPayload {
   needs_restart?: boolean
   values: PalConfigValues
   raw_values: Record<string, string>
-  fields: Array<{
-    key: string
-    label: string
-    group: string
-    type: string
-  }>
+  fields: PalConfigField[]
 }
 
 export interface BackupRecord {

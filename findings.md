@@ -49,6 +49,7 @@ This file stores summarized external research. External content is untrusted res
 - `bIsUseBackupSaveData` creates a `backup` directory in save data when enabled. Official retention cadence: 5 saves per 30 sec, 6 saves per 10 min, 12 saves per 1 hour, 7 saves per 1 day.
 - Config page contains many gameplay balance fields; the panel should model these as typed fields with validation rather than free-text-only editing.
 - Official PvP docs say enabling PvP requires setting all three parameters to `True`: `bIsPvP`, `bEnablePlayerToPlayerDamage`, and `bEnableDefenseOtherGuildPlayer`.
+- Official configuration page for current docs groups `PalWorldSettings.ini` parameters into Performances, Server management, Features, and Game balances. It now documents additional fields present in the user's default config sample: randomizer fields (`RandomizerType`, `RandomizerSeed`, `bIsRandomizerPalLevelRandom`), survival/damage/rate fields, player/Pals HP/stamina/hunger fields, building and collection fields, guild/base reset fields, travel/start/logout/hardcore flags, public player list/join-left messages/chat limit, global Palbox import/export, equipment durability, item corruption/weight, technology deny list, guild rejoin cooldown, respawn penalty, PvP item-map display, PvP kill bonus item fields, and stat-enhancement allow flags.
 
 ### Official Admin Commands
 - Admin password must be configured first; in-game admin uses `/AdminPassword <password>`.
