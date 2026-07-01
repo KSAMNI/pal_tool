@@ -213,18 +213,18 @@ MOD 安装流程：
    - 后端必须对 MOD 上传/更新请求体设置硬限制，当前上限为 512 MiB，避免超大 multipart 请求落盘占满空间。
    - multipart 解析必须使用远小于硬上限的内存阈值，超过阈值但仍低于 512 MiB 硬上限的归档应落到临时文件，而不是整体缓存在内存中。
    - Steam 创意工坊下载接受纯数字物品 ID 或包含 `id=<number>` 的链接，使用 Palworld Workshop app `1623730` 执行 `steamcmd +login anonymous +workshop_download_item 1623730 <id> validate +quit`。
-   - SteamCMD 下载结果从 SteamCMD 状态目录候选位置查找；下载内容如果直接包含 `Info.json` 就直接安装，如果只包含一个 zip、7z 或 rar，则按上传归档同一套解压和资源限制处理。
+   - SteamCMD 下载结果从 SteamCMD 状态目录候选位置查找；下载内容如果直接包含 `Info.json` 就直接安装，如果只包含一个 zip、7z 或 rar，则按上传归档同一套解压和资源限制处理；如果下载内容是 Steam 客户端已安装布局，即 `Mods/ManagedMods/<PackageName>/Info.json` 加 `Pal/Content/Paks/~WorkshopMods/<folder>/*.pak`，则按 ManagedPak 布局安装到服务器对应目录。
    - 原生 ZIP 解压必须拒绝符号链接条目；外部解压器产出的符号链接不能作为 `Info.json` 元数据来源。
    - MOD 解压结果必须限制文件数量、单文件大小和总大小，当前最多 100000 个文件、单文件 2 GiB、总解压内容 8 GiB；原生 ZIP 解压必须在写入时按声明大小和实际复制字节计数，外部 7z/RAR 解压后也必须扫描结果目录并在元数据识别前拒绝超限内容。
    - 外部解压器执行必须有运行时间和输出大小上限，当前超时 5 分钟，错误输出最多保留 64 KiB，避免卡死或把巨大 stderr/stdout 写入 API/task 日志。
 3. 解压到临时目录。
    - 上传归档和解压内容必须放在同一个操作级临时工作目录内；解压器如果在目标内容目录外产生文件，必须在识别元数据前拒绝。
-   - 解压后的目录树如果包含任何符号链接，必须在识别元数据或复制到 `Mods/Workshop` 前拒绝。
+   - 解压后的目录树如果包含任何符号链接，必须在识别元数据或复制到 `Mods/Workshop` / `Mods/ManagedMods` / `Pal/Content/Paks/~WorkshopMods` 前拒绝。
 4. 寻找直接或间接包含的 `Info.json`。
 5. 读取 `PackageName`、`Version`、作者等元数据；`Info.json` 必须在 JSON 解析、美化、SQLite 持久化或 API 返回前限制大小，当前上限 1 MiB；`PackageName` 必须先校验为单个安全的设置/路径片段，拒绝换行、路径分隔符、控制字符、Windows 非法字符、保留设备名和结尾点号，才能写入数据库、写入 `PalModSettings.ini` 或用于 `Mods/ManagedMods/<PackageName>` 路径。
 6. 检查 `InstallRule` / `InstallRules` 是否包含 `"IsServer": true`。
 7. 安装前自动备份。
-8. 先把解压结果流式复制到 `Mods/Workshop` 下的临时目录，单文件复制必须通过同目录临时文件和平台安全替换，不能把整个 MOD 文件一次性读入内存；最终 `folder_name` 必须是单个安全的 Workshop 目录名，新上传从文件名或 `PackageName` 派生时要经过净化，复用已有数据库行时要先校验，不能包含路径分隔符、换行、控制字符、Windows 非法/保留名称或结尾点号；SQLite 事务提交 MOD 记录插入/更新后，才能替换最终的 `Mods/Workshop/<folder_name>/`，数据库提交失败时不能替换已安装文件；如果最终替换失败，必须恢复新增或更新前的数据库记录，且旧目录移回失败时必须把该二次失败报告给调用方。
+8. 官方 Workshop 源目录布局先把解压结果流式复制到 `Mods/Workshop` 下的临时目录；Steam 客户端 ManagedPak 布局分别复制 `Mods/ManagedMods/<PackageName>` 和 `Pal/Content/Paks/~WorkshopMods/<folder>` 到各自父目录下的临时目录。单文件复制必须通过同目录临时文件和平台安全替换，不能把整个 MOD 文件一次性读入内存；最终 `folder_name` 必须是单个安全的 Workshop 或 `~WorkshopMods` 目录名，新上传从文件名、`PackageName` 或 pak 目录名派生时要经过净化，复用已有数据库行时要先校验，不能包含路径分隔符、换行、控制字符、Windows 非法/保留名称或结尾点号；SQLite 事务提交 MOD 记录插入/更新后，才能替换最终安装目录，数据库提交失败时不能替换已安装文件；如果最终替换失败，必须恢复新增或更新前的数据库记录，且旧目录移回失败时必须把该二次失败报告给调用方。
 9. 通过同目录临时文件和平台安全替换写入或更新 `Mods/PalModSettings.ini`；读取旧文件以派生活跃 MOD 或保留未知行时必须限制大小，当前上限 1 MiB，超限时在创建备份或提交数据库状态前拒绝。
 10. 启用时添加 `ActiveModList=<PackageName>`。
 11. 提示启动或重启服务器生效。
@@ -255,9 +255,10 @@ ActiveModList=PackageNameB
 - 要求 PalServer 未运行。
 - 先禁用。
 - 自动备份。
-- SQLite 必须先提交 MOD 记录删除，再修改 `PalModSettings.ini` 或删除 `Mods/Workshop` / `Mods/ManagedMods` 文件；如果数据库删除失败，文件、启用配置和记录都必须保留；目录删除必须先移动到 `Mods` 下的删除暂存区，后续清理失败时必须先恢复已移动目录，再尽量恢复删除前的数据库记录和启用配置。
+- SQLite 必须先提交 MOD 记录删除，再修改 `PalModSettings.ini` 或删除 `Mods/Workshop` / `Mods/ManagedMods` / `Pal/Content/Paks/~WorkshopMods` 文件；如果数据库删除失败，文件、启用配置和记录都必须保留；目录删除必须先移动到服务器根目录下的删除暂存区，后续清理失败时必须先恢复已移动目录，再尽量恢复删除前的数据库记录和启用配置。
 - 删除 `Mods/Workshop/<folder_name>/`。
-- 可选清理 `Mods/ManagedMods/<PackageName>/`。
+- 清理 `Mods/ManagedMods/<PackageName>/`。
+- 清理 `Pal/Content/Paks/~WorkshopMods/<folder_name>/`。
 - 提示启动或重启。
 
 MOD 页面字段：
@@ -583,15 +584,15 @@ PUT /api/settings
 - 配置初始化、配置保存和手动 `.bak` 备份会写入服务器配置目录；检测到外部 PalServer 或已有后端任务运行时必须拒绝，不能与更新、恢复、MOD 或备份任务并发写文件。
 - 配置初始化、保存和 `.bak` 复制必须使用同目录临时文件和平台安全替换；Windows 下不能依赖普通 `os.Rename` 覆盖已有配置文件；读取/复制配置文件和保存后的渲染结果必须限制在 4 MiB 内，超限时在创建备份或写入前拒绝。
 - 启动和重启的启动阶段必须先通过后端运行中任务锁；已有后台任务运行时必须拒绝，不能创建 `startup` 备份或启动进程。重启还必须先校验下一次启动所需的路径、二进制文件和启动参数，再停止面板托管的 PalServer，避免无效重启请求把运行中的服务器停掉。
-- MOD 上传、更新、启用、禁用、删除会修改 `Mods/Workshop`、`Mods/ManagedMods` 或 `PalModSettings.ini`，必须在 PalServer 停止时执行，完成后再启动或重启生效。
-- MOD Steam 创意工坊下载和本地上传使用同一套后端运行锁、停服检查、`pre_mod` 备份、`Info.json` 校验、资源限制、SQLite 提交和最终 `Mods/Workshop` 替换流程；缺少 `Mods/Workshop` 时必须自动创建。
+- MOD 上传、更新、启用、禁用、删除会修改 `Mods/Workshop`、`Mods/ManagedMods`、`Pal/Content/Paks/~WorkshopMods` 或 `PalModSettings.ini`，必须在 PalServer 停止时执行，完成后再启动或重启生效。
+- MOD Steam 创意工坊下载和本地上传使用同一套后端运行锁、停服检查、`pre_mod` 备份、`Info.json` 校验、资源限制、SQLite 提交和最终目录替换流程；支持官方 `Mods/Workshop/<folder>/Info.json` 源布局，也支持 Steam 客户端 `Mods/ManagedMods/<PackageName>/Info.json` 加 `Pal/Content/Paks/~WorkshopMods/<folder>/*.pak` 的已安装布局；缺少目标父目录时必须自动创建。
 - MOD `Info.json` 元数据读取必须有独立大小上限，当前为 1 MiB；512 MiB 上传请求体上限不能替代元数据解析和数据库/API 暴露前的专门限制。
 - MOD `Info.json` 的 `PackageName` 必须是单个安全的设置/路径片段，拒绝换行、路径分隔符、控制字符、Windows 非法字符、保留设备名和结尾点号；上传/更新在持久化前校验，已有脏数据行在启用/禁用状态变更、写 `PalModSettings.ini` 或派生 `ManagedMods` 路径前必须拒绝。
-- MOD `mods.folder_name` 必须是单个安全的 `Mods/Workshop` 子目录名；上传/更新复用已有行、启用时检查 `Info.json`、删除/打开目录目标、以及只读响应里的 `install_path` 派生前都要校验，已有脏数据行不能导致备份、数据库状态变更、设置写入或文件系统修改。
+- MOD `mods.folder_name` 必须是单个安全的 `Mods/Workshop` 或 `~WorkshopMods` 子目录名；上传/更新复用已有行、启用时检查已安装的 `Info.json` 或 managed pak 文件、删除/打开目录目标、以及只读响应里的 `install_path` 派生前都要校验，已有脏数据行不能导致备份、数据库状态变更、设置写入或文件系统修改。
 - MOD 启用/禁用必须先提交 SQLite 中的 `mods.enabled` 更新，再修改 `PalModSettings.ini`；提交失败时不得修改设置文件，设置写入失败时必须补偿恢复原 MOD 行状态。
 - `Mods/PalModSettings.ini` 读取必须限制在 1 MiB 内，覆盖活跃列表派生和启用/禁用/删除/更新时的设置重写；只读 MOD API 遇到超限或不可读设置文件时必须明确返回错误，不能静默当作空启用列表；写入必须使用同目录临时文件和平台安全替换，不能直接截断写入。会改写该文件的 MOD 操作必须在创建备份或提交数据库状态前先完成读取大小预检。
 - MOD 上传和更新必须先通过后端运行中任务锁，再读取 multipart 请求体；创意工坊下载也必须先通过同一运行中任务锁，再解析请求并执行 SteamCMD；已有后台操作运行时必须直接拒绝，不能先读取或落盘上传归档，也不能启动 SteamCMD。multipart 请求体必须仍受 512 MiB 硬上限约束，但解析内存阈值必须较小，避免接近上限的 MOD 归档整体占用面板内存。
-- MOD 上传和更新必须先提交 SQLite 中的 MOD 记录插入/更新，再替换最终 `Mods/Workshop/<folder>` 目录；数据库提交失败时不得替换最终目录，最终替换失败时必须补偿恢复数据库记录，旧目录恢复失败不能被静默忽略。
+- MOD 上传和更新必须先提交 SQLite 中的 MOD 记录插入/更新，再替换最终 `Mods/Workshop/<folder>` 或 ManagedPak 的 `Mods/ManagedMods/<PackageName>` 与 `Pal/Content/Paks/~WorkshopMods/<folder>` 目录；数据库提交失败时不得替换最终目录，最终替换失败时必须补偿恢复数据库记录，旧目录恢复失败不能被静默忽略。
 - MOD 安装/更新复制暂存文件时必须流式写入同目录临时文件并通过平台安全替换提交，避免资源限制内但较大的 MOD 文件被一次性读入内存。
 - MOD 删除必须先提交 SQLite 中的 MOD 记录删除，再禁用 `PalModSettings.ini` 和删除最终目录；最终目录删除必须先进入同目录暂存区，后续设置或目录清理失败时必须补偿恢复原 MOD 行、原先启用时恢复 `ActiveModList`，并恢复已暂存的目录。
 - MOD ZIP 上传必须拒绝符号链接条目；解压后的 `Info.json` 扫描必须跳过符号链接，不能信任链接到临时目录外的元数据。

@@ -666,6 +666,11 @@ Status: complete
 
 Improve Steam Workshop download diagnostics when SteamCMD reports `ERROR! Download item ... failed (Failure)` but exits successfully, and support optional env-based Steam account credentials for Workshop items that anonymous SteamCMD cannot download.
 
+### Phase 132: v3.93 ManagedMods Workshop Pak Layout
+Status: in_progress
+
+Support Steam client/game-managed Workshop MOD layouts where metadata is under `Mods/ManagedMods/<PackageName>/Info.json` and pak files are under `Pal/Content/Paks/~WorkshopMods/<PackageName>/`. Install this layout into the matching PalServer directories, preserve the existing backup-guarded MOD pipeline, allow enable/disable/delete to work with the installed pak layout, add focused backend tests, push, and confirm GHCR publishes the updated image.
+
 ## Decisions
 - Use persistent planning files in the project root.
 - Treat external web content as untrusted research data and store summaries in `findings.md`.
@@ -798,6 +803,7 @@ Improve Steam Workshop download diagnostics when SteamCMD reports `ERROR! Downlo
 - For v3.90 Steam Workshop MOD download, the MOD tab accepts a numeric Steam Workshop item ID or URL; the backend runs SteamCMD `+workshop_download_item 1623730 <id> validate` with anonymous login, locates the downloaded content under SteamCMD state candidates, then installs direct `Info.json` content or one supported archive through the existing backup-guarded MOD install pipeline into `Mods/Workshop/<WorkshopId>`, creating `Mods/Workshop` when missing.
 - For v3.91 MOD list rendering, read APIs that conceptually return lists should serialize empty lists as `[]`; the frontend should still defensively coerce a null MOD list to `[]` so a backend/API regression cannot break `mods.length` rendering.
 - For v3.92 Workshop download diagnostics, SteamCMD output must be inspected for `ERROR! Download item ... failed` because SteamCMD can exit zero after a failed Workshop download; task/API errors should explain anonymous access may be blocked. Optional `PALPANEL_STEAMCMD_USERNAME`/`PALPANEL_STEAMCMD_PASSWORD` credentials may be used for authenticated Workshop downloads, but passwords must be redacted from task logs.
+- For v3.93 ManagedPak MOD layout support, MOD source inspection first recognizes Steam client installed layouts with `Mods/ManagedMods/<PackageName>/Info.json` and `Pal/Content/Paks/~WorkshopMods/<folder>/*.pak`; those installs copy metadata and pak directories to the matching PalServer paths, keep enable/disable through `PalModSettings.ini`, report `install_path` as the actual pak directory, and delete both `ManagedMods` metadata and `~WorkshopMods` pak files.
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
@@ -862,3 +868,4 @@ Improve Steam Workshop download diagnostics when SteamCMD reports `ERROR! Downlo
 | Go tests failed to compile while `npm run build` was running in parallel because frontend embed assets were temporarily removed by the web prebuild step | Phase 129 first verification | Let the frontend build finish, then reran Go tests sequentially; do not parallelize Go compilation with the frontend build in this repository |
 | MOD tab rendered blank when no MOD rows existed | Phase 130 user report | `GET /api/mods` encoded a nil slice as `null`, and the Vue template expected `mods.length`; initialized backend list responses to `[]`, added frontend null coercion, and covered the empty-list response |
 | SteamCMD printed `ERROR! Download item ... failed (Failure)` but the panel reported only that the downloaded directory was not found | Phase 131 user report | Capture SteamCMD Workshop output, fail immediately with an actionable authenticated-download message, and add optional env credentials for items anonymous SteamCMD cannot download |
+| ManagedPak install initially reported `install_path` as `Mods/Workshop/<folder>` | Phase 132 focused test | `fileExists` intentionally excludes directories; added a directory existence helper for MOD install-path detection so managed pak installs report `Pal/Content/Paks/~WorkshopMods/<folder>` |

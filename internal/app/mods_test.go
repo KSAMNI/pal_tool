@@ -269,6 +269,105 @@ func TestWorkshopModDownloadExtractsSingleArchiveContent(t *testing.T) {
 	}
 }
 
+func TestWorkshopModDownloadInstallsManagedPakLayout(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamRoot := t.TempDir()
+	steamPath := filepath.Join(steamRoot, steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("fake steamcmd"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+
+	const workshopID = "3625364851"
+	const packageName = "PalSurgeryTableUnlocker"
+	const pakName = "mEi_PalSurgeryTableUnlocker_P.pak"
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		contentRoot := filepath.Join(cmd.Dir, "steamapps", "workshop", "content", palworldWorkshopAppID, workshopID)
+		writeManagedPakModContent(t, contentRoot, packageName, "1.0.0", pakName)
+		return nil
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": workshopID,
+	})
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("workshop download status = %d, want %d; body=%s", resp.StatusCode, http.StatusCreated, body)
+	}
+	var mod modRecord
+	if err := json.NewDecoder(resp.Body).Decode(&mod); err != nil {
+		t.Fatalf("decode mod: %v", err)
+	}
+	resp.Body.Close()
+
+	if mod.PackageName != packageName || mod.FolderName != packageName || mod.Version != "1.0.0" {
+		t.Fatalf("unexpected managed pak mod metadata: %#v", mod)
+	}
+	wantPakDir := filepath.Join(serverPath, "Pal", "Content", "Paks", "~WorkshopMods", packageName)
+	if mod.InstallPath != wantPakDir {
+		t.Fatalf("install_path = %q, want %q", mod.InstallPath, wantPakDir)
+	}
+	pakPath := filepath.Join(wantPakDir, pakName)
+	if !fileExists(pakPath) {
+		t.Fatalf("installed pak missing: %s", pakPath)
+	}
+	managedInfoPath := filepath.Join(serverPath, "Mods", "ManagedMods", packageName, "Info.json")
+	if !fileExists(managedInfoPath) {
+		t.Fatalf("installed managed Info.json missing: %s", managedInfoPath)
+	}
+	managedManifestPath := filepath.Join(serverPath, "Mods", "ManagedMods", packageName, "InstallManifest.json")
+	if !fileExists(managedManifestPath) {
+		t.Fatalf("installed managed InstallManifest.json missing: %s", managedManifestPath)
+	}
+	workshopInfoPath := filepath.Join(serverPath, "Mods", "Workshop", workshopID, "Info.json")
+	if fileExists(workshopInfoPath) {
+		t.Fatalf("managed pak layout should not be installed as Workshop source: %s", workshopInfoPath)
+	}
+
+	resp = doJSON(t, client, http.MethodPost, server.URL+"/api/mods/"+strconvID(mod.ID)+"/enable", nil)
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("enable status = %d, want %d; body=%s", resp.StatusCode, http.StatusOK, body)
+	}
+	resp.Body.Close()
+	settingsPath := filepath.Join(serverPath, "Mods", "PalModSettings.ini")
+	settingsData, err := os.ReadFile(settingsPath)
+	if err != nil {
+		t.Fatalf("read PalModSettings.ini: %v", err)
+	}
+	if !strings.Contains(string(settingsData), "ActiveModList="+packageName) {
+		t.Fatalf("PalModSettings.ini missing enabled managed pak mod: %s", settingsData)
+	}
+
+	resp = doJSONConfirmed(t, client, http.MethodDelete, server.URL+"/api/mods/"+strconvID(mod.ID), nil)
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("delete status = %d, want %d; body=%s", resp.StatusCode, http.StatusOK, body)
+	}
+	resp.Body.Close()
+	if fileExists(pakPath) {
+		t.Fatalf("managed pak file was not removed: %s", pakPath)
+	}
+	if fileExists(managedInfoPath) {
+		t.Fatalf("managed Info.json was not removed: %s", managedInfoPath)
+	}
+	settingsData, err = os.ReadFile(settingsPath)
+	if err != nil {
+		t.Fatalf("read PalModSettings.ini after delete: %v", err)
+	}
+	if strings.Contains(string(settingsData), "ActiveModList="+packageName) {
+		t.Fatalf("deleted managed pak mod is still active: %s", settingsData)
+	}
+}
+
 func TestWorkshopModDownloadFailsWhenSteamCMDReportsDownloadFailure(t *testing.T) {
 	panel, err := New(t.TempDir())
 	if err != nil {
@@ -2649,6 +2748,36 @@ func writeSampleModContent(t *testing.T, root, packageName, version string) {
 	}
 	if err := os.WriteFile(filepath.Join(root, "Data", "file.txt"), []byte("payload"), 0o644); err != nil {
 		t.Fatalf("write sample mod payload: %v", err)
+	}
+}
+
+func writeManagedPakModContent(t *testing.T, root, packageName, version, pakName string) {
+	t.Helper()
+	managedDir := filepath.Join(root, "Mods", "ManagedMods", packageName)
+	if err := os.MkdirAll(managedDir, 0o755); err != nil {
+		t.Fatalf("mkdir managed mod content: %v", err)
+	}
+	info := `{
+  "Name": "` + packageName + `",
+  "PackageName": "` + packageName + `",
+  "Version": "` + version + `",
+  "Author": "Tester",
+  "InstallRules": [
+    { "IsServer": true, "Files": [] }
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(managedDir, "Info.json"), []byte(info), 0o644); err != nil {
+		t.Fatalf("write managed Info.json: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(managedDir, "InstallManifest.json"), []byte(`{"files":[]}`), 0o644); err != nil {
+		t.Fatalf("write managed InstallManifest.json: %v", err)
+	}
+	pakDir := filepath.Join(root, "Pal", "Content", "Paks", "~WorkshopMods", packageName)
+	if err := os.MkdirAll(pakDir, 0o755); err != nil {
+		t.Fatalf("mkdir managed pak dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(pakDir, pakName), []byte("pak payload"), 0o644); err != nil {
+		t.Fatalf("write managed pak: %v", err)
 	}
 }
 

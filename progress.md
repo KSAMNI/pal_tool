@@ -1106,3 +1106,11 @@
 - Verification: `go test ./...` passed.
 - Verification: `npm run build` passed with the existing Vite large chunk warning.
 - Marked Phase 131 complete in `task_plan.md`.
+- Started Phase 132 after the user provided local Steam client install paths showing a ManagedMods/Paks layout: metadata under `Mods/ManagedMods/<PackageName>/Info.json` and pak files under `Pal/Content/Paks/~WorkshopMods/<PackageName>/`, which the current Workshop installer does not recognize because it only installs direct `Info.json` or single-archive Workshop content into `Mods/Workshop/<WorkshopId>`.
+- Implemented Phase 132 backend support in `internal/app/mods.go`: MOD source inspection now recognizes ManagedPak layouts before the generic recursive `Info.json` scan, installs metadata into `Mods/ManagedMods/<PackageName>` and pak files into `Pal/Content/Paks/~WorkshopMods/<folder>`, keeps existing backup/task/SQLite compensation behavior, makes enable/open/list paths layout-aware, and deletes the managed pak directory together with Workshop/ManagedMods cleanup.
+- Added focused backend coverage proving a Steam Workshop download with the user-provided ManagedMods/Paks shape installs the pak and metadata, exposes the pak directory as `install_path`, can be enabled through `PalModSettings.ini`, and removes both managed metadata and pak files on delete.
+- First Phase 132 focused verification found `install_path` still fell back to `Mods/Workshop/<folder>` because directory checks used the file-only `fileExists` helper; added a directory existence helper for install-path detection and reran successfully.
+- Verification: `go test ./internal/app -run 'TestWorkshopModDownloadInstallsManagedPakLayout|TestWorkshopModDownload|TestModUploadEnableDisableDeleteRoutes|TestDeleteModRestoresSettingsAndRowWhenDirectoryRemoveFails' -count=1 -v` passed.
+- Verification: `go test ./...` passed before and after `npm run build`.
+- Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Verification: `git diff --check` passed with only the repository's existing Windows line-ending warnings.
