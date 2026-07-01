@@ -637,7 +637,7 @@ Status: complete
 Add a GitHub Actions workflow that builds the Docker image on GitHub-hosted runners and publishes it to GitHub Container Registry as a Linux amd64 image. Keep the GHCR image name lowercase-safe, wire Compose so deployments can override the image reference with `PALPANEL_IMAGE`, document local-build versus GHCR-pull usage, verify workflow/static deployment files plus normal backend/frontend checks, then create the GitHub repository, push `main`, and inspect the publishing run.
 
 ### Phase 126: v3.87 Docker Bind-Mount Ownership Repair
-Status: in_progress
+Status: complete
 
 Fix first-run Compose deployments where `/data/app.db` cannot be opened because host bind-mounted `data` or `PalServer` directories were created as root-owned paths while the panel process runs as UID/GID 10001. Keep persistence as explicit current-folder bind mounts rather than Docker named or anonymous volumes; remove the Dockerfile `VOLUME` declaration. Add a Docker entrypoint that starts as root, creates and repairs ownership for `/data`, `/palserver`, and SteamCMD state, then drops privileges to the configured `PALPANEL_UID`/`PALPANEL_GID`. Remove Compose-level `user:` overrides so the entrypoint can do the repair, document the behavior and opt-out, verify statically plus normal tests, push, and confirm GHCR publishes the fixed image.
 

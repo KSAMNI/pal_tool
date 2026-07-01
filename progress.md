@@ -1064,3 +1064,6 @@
 - Static deployment checks passed for no Dockerfile `VOLUME`, no Compose `user:`, explicit bind mounts, GHCR image use, and ownership-repair environment wiring. Docker CLI remains unavailable locally, so the actual image build is deferred to GitHub Actions.
 - Verification: `go test ./...` passed.
 - Verification: `npm run build` passed with the existing Vite large chunk warning.
+- Committed and pushed `d2caccb Repair Docker bind mount ownership`.
+- GitHub Actions run `28494992659` (`Docker GHCR`) completed successfully in 1m51s. Build logs confirm pushed tags `ghcr.io/ksamni/palpanel-lite:main`, `ghcr.io/ksamni/palpanel-lite:latest`, and `ghcr.io/ksamni/palpanel-lite:sha-d2caccb` with digest `sha256:a9b8e1b8b1d75b44cbfea992b4cf335cfac4918ecdd6eeb0d8a2a4b141837742`.
+- Marked Phase 126 complete in `task_plan.md`.
