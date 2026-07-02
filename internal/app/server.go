@@ -292,16 +292,10 @@ func (a *App) startServerAfterUpdate(settings settingsPayload) error {
 }
 
 func (a *App) startManagedServerProcess(settings settingsPayload) error {
-	if a.startServerProcessFunc != nil {
-		return a.startServerProcessFunc(settings)
-	}
 	return a.startServerProcess(settings)
 }
 
 func (a *App) startManagedServerProcessAdmitted(settings settingsPayload) error {
-	if a.startServerProcessFunc != nil {
-		return a.startServerProcessFunc(settings)
-	}
 	return a.startServerProcessAdmitted(settings)
 }
 
@@ -315,6 +309,13 @@ func (a *App) startServerProcess(settings settingsPayload) error {
 }
 
 func (a *App) startServerProcessAdmitted(settings settingsPayload) error {
+	if a.startServerProcessFunc != nil {
+		return a.startServerProcessFunc(settings)
+	}
+	return a.startServerProcessCore(settings)
+}
+
+func (a *App) startServerProcessCore(settings settingsPayload) error {
 	serverPath, binary, args, err := a.validateServerStartPreflight(settings)
 	if err != nil {
 		return err

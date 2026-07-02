@@ -589,6 +589,99 @@ func TestServerRestartStopsThenStartsAfterPreflight(t *testing.T) {
 	}
 }
 
+func TestServerRestartDefaultWiringRestartsManagedServer(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("test uses a POSIX shell PalServer fixture")
+	}
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	writeInterruptibleFakePalServerBinary(t, serverPath)
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	panel.serverProcessDetector = func(settings settingsPayload) (bool, error) {
+		return false, nil
+	}
+
+	if err := panel.startServerProcess(settingsPayload{PalServerPath: serverPath}); err != nil {
+		t.Fatalf("startServerProcess() error = %v", err)
+	}
+	if !panel.isServerRunning() {
+		t.Fatal("server was not running before restart")
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSONConfirmed(t, client, http.MethodPost, server.URL+"/api/server/restart", nil)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("restart status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if !panel.isServerRunning() {
+		t.Fatal("server was not running after restart")
+	}
+
+	started := 0
+	for _, entry := range panel.recentServerLogs(0) {
+		if strings.Contains(entry.Message, "Started ") && strings.Contains(entry.Message, " with pid ") {
+			started++
+		}
+	}
+	if started < 2 {
+		t.Fatalf("server logs show %d start entries, want at least 2 after restart: %+v", started, panel.recentServerLogs(0))
+	}
+}
+
+func TestServerUpdateDefaultWiringRestartsAfterSuccessfulUpdate(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("test uses a POSIX shell PalServer fixture")
+	}
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	writeInterruptibleFakePalServerBinary(t, serverPath)
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamPath := filepath.Join(t.TempDir(), steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+	panel.serverProcessDetector = func(settings settingsPayload) (bool, error) {
+		return false, nil
+	}
+
+	if err := panel.startServerProcess(settingsPayload{PalServerPath: serverPath}); err != nil {
+		t.Fatalf("startServerProcess() error = %v", err)
+	}
+	task, err := panel.startSteamCMDTask("server_update")
+	if err != nil {
+		t.Fatalf("startSteamCMDTask() error = %v", err)
+	}
+	task = waitForTaskStatus(t, panel, task.ID, "success")
+	if !panel.isServerRunning() {
+		t.Fatal("server was not running after update restart")
+	}
+	if !strings.Contains(task.Log, "Restarting PalServer after successful server_update") {
+		t.Fatalf("task log missing restart note: %s", task.Log)
+	}
+
+	started := 0
+	for _, entry := range panel.recentServerLogs(0) {
+		if strings.Contains(entry.Message, "Started ") && strings.Contains(entry.Message, " with pid ") {
+			started++
+		}
+	}
+	if started < 2 {
+		t.Fatalf("server logs show %d start entries, want at least 2 after update restart: %+v", started, panel.recentServerLogs(0))
+	}
+}
+
 func TestSteamCMDTaskRejectsRunningTaskBeforeBackupSideEffects(t *testing.T) {
 	panel, err := New(t.TempDir())
 	if err != nil {

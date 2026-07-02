@@ -139,7 +139,7 @@ func New(dataDir string) (*App, error) {
 	app.commandRunner = func(cmd *exec.Cmd) error { return cmd.Run() }
 	app.isServerRunningFunc = app.isServerRunning
 	app.stopServerProcessFunc = app.stopServerProcess
-	app.startServerProcessFunc = app.startServerProcess
+	app.startServerProcessFunc = app.startServerProcessCore
 	app.serverProcessDetector = detectConfiguredServerProcess
 	if err := app.migrate(); err != nil {
 		db.Close()
