@@ -167,11 +167,11 @@ func configureSQLite(db *sql.DB) error {
 
 func (a *App) Close() error {
 	a.closeOnce.Do(func() {
+		close(a.stopCh)
+		a.backgroundWG.Wait()
 		if err := a.stopManagedServerOnClose(30 * time.Second); err != nil {
 			a.closeErr = err
 		}
-		close(a.stopCh)
-		a.backgroundWG.Wait()
 		if err := a.db.Close(); err != nil && a.closeErr == nil {
 			a.closeErr = err
 		}

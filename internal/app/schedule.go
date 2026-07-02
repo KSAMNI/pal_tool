@@ -20,6 +20,8 @@ var scheduledSaveSettleDelay = 3 * time.Second
 
 var scheduleTimePattern = regexp.MustCompile(`^([01]\d|2[0-3]):([0-5]\d)$`)
 
+var errScheduledActionInterrupted = fmt.Errorf("panel is shutting down")
+
 var validScheduleActions = map[string]struct{}{
 	"start":   {},
 	"stop":    {},
@@ -241,14 +243,18 @@ func (a *App) runScheduledAction(taskID int64, action string, settings settingsP
 			a.logTaskf(taskID, "PalServer is not running from this panel; nothing to stop")
 			return nil
 		}
-		a.saveWorldBeforeScheduledStop(taskID, settings)
+		if !a.saveWorldBeforeScheduledStop(taskID, settings) {
+			return errScheduledActionInterrupted
+		}
 		return a.stopManagedServerProcess(scheduledActionStopTimeout)
 	case "restart":
 		if external {
 			return errExternalServerRunning
 		}
 		if managed {
-			a.saveWorldBeforeScheduledStop(taskID, settings)
+			if !a.saveWorldBeforeScheduledStop(taskID, settings) {
+				return errScheduledActionInterrupted
+			}
 			if err := a.stopManagedServerProcess(scheduledActionStopTimeout); err != nil {
 				return err
 			}
@@ -261,19 +267,22 @@ func (a *App) runScheduledAction(taskID int64, action string, settings settingsP
 	}
 }
 
-func (a *App) saveWorldBeforeScheduledStop(taskID int64, settings settingsPayload) {
+func (a *App) saveWorldBeforeScheduledStop(taskID int64, settings settingsPayload) bool {
 	client, err := a.newPalAPIClientFromSettings(settings)
 	if err != nil {
 		a.logTaskf(taskID, "Skipping world save before stop: %v", err)
-		return
+		return true
 	}
 	if err := client.post("/save", nil, nil); err != nil {
 		a.logTaskf(taskID, "World save request failed (continuing): %v", err)
-		return
+		return true
 	}
 	a.logTaskf(taskID, "World save requested; waiting %s before stopping", scheduledSaveSettleDelay)
 	select {
 	case <-time.After(scheduledSaveSettleDelay):
+		return true
 	case <-a.stopCh:
+		a.logTaskf(taskID, "Panel is shutting down; scheduled action interrupted before stopping PalServer")
+		return false
 	}
 }
