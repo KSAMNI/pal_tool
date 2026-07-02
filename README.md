@@ -2,8 +2,6 @@
 
 PalPanel Lite 是一个面向自用场景的 Palworld 单机单服管理面板。推荐使用 Docker Compose 一键部署，面板会在同一台 Linux 服务器上管理 Palworld Dedicated Server，包括安装/更新、启动停止、配置编辑、备份恢复、MOD 管理、玩家管理、日志查看和 Palworld REST API 操作。
 
-中文部署和用户指南：[中文指导](README.zh-CN.md)
-
 默认部署镜像：
 
 ```text
