@@ -47,6 +47,14 @@ type modInfo struct {
 	Layout          modSourceLayout
 	PakSourceRoot   string
 	PakFolderName   string
+	Dependencies    []string
+	InstallRules    []modInstallRule
+}
+
+type modInstallRule struct {
+	Type     string
+	IsServer bool
+	Targets  []string
 }
 
 type modSourceLayout string
@@ -591,6 +599,9 @@ func (a *App) installExtractedModSource(base string, info modInfo, folderName st
 	if info.Layout == modSourceLayoutManagedPak {
 		return a.installManagedPakModSource(base, info, folderName)
 	}
+	if err := validateModServerCompatibility(info); err != nil {
+		return modRecord{}, err
+	}
 	if strings.TrimSpace(info.SourceRoot) == "" {
 		return modRecord{}, errors.New("mod source root is required")
 	}
@@ -634,6 +645,30 @@ func (a *App) installExtractedModSource(base string, info modInfo, folderName st
 	if err := copyDir(info.SourceRoot, stagingDir); err != nil {
 		return modRecord{}, err
 	}
+	pakSourceRoot, err := serverPakSourceRoot(info)
+	if err != nil {
+		return modRecord{}, err
+	}
+	var pakStagingDir string
+	var pakTargetDir string
+	if pakSourceRoot != "" {
+		pakTargetDir, err = managedPakModDirectory(base, folderName)
+		if err != nil {
+			return modRecord{}, err
+		}
+		pakRoot := filepath.Dir(pakTargetDir)
+		if err := os.MkdirAll(pakRoot, 0o755); err != nil {
+			return modRecord{}, err
+		}
+		pakStagingDir, err = os.MkdirTemp(pakRoot, ".palpanel-install-*")
+		if err != nil {
+			return modRecord{}, err
+		}
+		defer os.RemoveAll(pakStagingDir)
+		if err := copyDir(pakSourceRoot, pakStagingDir); err != nil {
+			return modRecord{}, err
+		}
+	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	id, err := a.commitModInstallRecord(existing, previous, info, folderName, enabled, now)
@@ -648,7 +683,11 @@ func (a *App) installExtractedModSource(base string, info modInfo, folderName st
 			return modRecord{}, err
 		}
 	}
-	if err := replaceInstalledModDir(stagingDir, targetDir); err != nil {
+	replacements := []modDirReplacement{{stagingDir: stagingDir, targetDir: targetDir}}
+	if pakStagingDir != "" {
+		replacements = append(replacements, modDirReplacement{stagingDir: pakStagingDir, targetDir: pakTargetDir})
+	}
+	if err := replaceInstalledModDirs(replacements); err != nil {
 		if restoreErr := a.restoreModInstallRecord(existing, previous, id); restoreErr != nil {
 			return modRecord{}, fmt.Errorf("%w; failed to restore mod database state: %v", err, restoreErr)
 		}
@@ -658,6 +697,9 @@ func (a *App) installExtractedModSource(base string, info modInfo, folderName st
 }
 
 func (a *App) installManagedPakModSource(base string, info modInfo, folderName string) (modRecord, error) {
+	if err := validateModServerCompatibility(info); err != nil {
+		return modRecord{}, err
+	}
 	if strings.TrimSpace(info.SourceRoot) == "" {
 		return modRecord{}, errors.New("managed MOD metadata source root is required")
 	}
@@ -1131,15 +1173,15 @@ func modInstallPath(base string, mod modRecord) (string, error) {
 	if workshopErr != nil {
 		return "", workshopErr
 	}
-	if fileExists(filepath.Join(workshopDir, "Info.json")) {
-		return workshopDir, nil
-	}
 	pakDir, pakErr := managedPakModDirectory(base, mod.FolderName)
 	if pakErr != nil {
 		return "", pakErr
 	}
 	if directoryExists(pakDir) {
 		return pakDir, nil
+	}
+	if fileExists(filepath.Join(workshopDir, "Info.json")) {
+		return workshopDir, nil
 	}
 	managedDir, managedErr := managedModDirectory(base, mod.PackageName)
 	if managedErr == nil && directoryExists(managedDir) {
@@ -1770,16 +1812,53 @@ func parseModInfoFile(infoPath, sourceRoot string, layout modSourceLayout) (modI
 	if err := validateModPackageName(packageName); err != nil {
 		return modInfo{}, err
 	}
+	installRules := readModInstallRules(raw)
 	return modInfo{
 		Name:            firstNonEmpty(readJSONText(raw, "Name", "DisplayName", "ModName"), packageName),
 		PackageName:     packageName,
 		Version:         readJSONText(raw, "Version", "version"),
 		Author:          readJSONText(raw, "Author", "AuthorName", "author"),
-		ServerSupported: jsonContainsServerInstallRule(raw),
+		ServerSupported: modInstallRulesServerSupported(installRules),
 		InfoJSON:        string(pretty),
 		SourceRoot:      sourceRoot,
 		Layout:          layout,
+		Dependencies:    readJSONStringArray(raw, "Dependencies", "dependencies"),
+		InstallRules:    installRules,
 	}, nil
+}
+
+func readModInstallRules(raw map[string]any) []modInstallRule {
+	value, ok := firstJSONValue(raw, "InstallRule", "InstallRules", "install_rule", "install_rules")
+	if !ok {
+		return nil
+	}
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	rules := make([]modInstallRule, 0, len(items))
+	for _, item := range items {
+		object, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		rule := modInstallRule{
+			Type:     readJSONText(object, "Type", "type"),
+			IsServer: readJSONBool(object, "IsServer", "isServer", "is_server"),
+			Targets:  readJSONStringArray(object, "Targets", "targets"),
+		}
+		rules = append(rules, rule)
+	}
+	return rules
+}
+
+func modInstallRulesServerSupported(rules []modInstallRule) bool {
+	for _, rule := range rules {
+		if rule.IsServer {
+			return true
+		}
+	}
+	return false
 }
 
 func readModInfoJSON(path string) ([]byte, error) {
@@ -2435,6 +2514,74 @@ func configuredServerBase(settings settingsPayload) (string, error) {
 	return base, nil
 }
 
+func validateModServerCompatibility(info modInfo) error {
+	if modHasUE4SSDependency(info) {
+		return fmt.Errorf("mod %s depends on UE4SS, which is not supported by Linux PalServer automatic installation", info.PackageName)
+	}
+	return nil
+}
+
+func modHasUE4SSDependency(info modInfo) bool {
+	for _, dependency := range info.Dependencies {
+		if strings.Contains(strings.ToLower(dependency), "ue4ss") {
+			return true
+		}
+	}
+	return false
+}
+
+func serverPakSourceRoot(info modInfo) (string, error) {
+	for _, rule := range info.InstallRules {
+		if !rule.IsServer || !strings.EqualFold(strings.TrimSpace(rule.Type), "Paks") {
+			continue
+		}
+		for _, target := range rule.Targets {
+			source, err := resolveModInstallRuleTarget(info.SourceRoot, target)
+			if err != nil {
+				return "", err
+			}
+			hasPak, err := directoryContainsFileWithExt(source, ".pak")
+			if err != nil {
+				return "", err
+			}
+			if hasPak {
+				return source, nil
+			}
+		}
+	}
+	return "", nil
+}
+
+func resolveModInstallRuleTarget(sourceRoot, target string) (string, error) {
+	sourceRoot = strings.TrimSpace(sourceRoot)
+	if sourceRoot == "" {
+		return "", errors.New("mod source root is required")
+	}
+	base, err := filepath.Abs(sourceRoot)
+	if err != nil {
+		return "", err
+	}
+	target = strings.TrimSpace(filepath.FromSlash(target))
+	if target == "" || target == "." {
+		return base, nil
+	}
+	if filepath.IsAbs(target) {
+		return "", fmt.Errorf("mod install target must be relative: %q", target)
+	}
+	candidate := filepath.Join(base, target)
+	if err := ensureWithin(base, candidate); err != nil {
+		return "", err
+	}
+	info, err := os.Stat(candidate)
+	if err != nil {
+		return "", err
+	}
+	if !info.IsDir() {
+		return "", fmt.Errorf("mod install target is not a directory: %s", candidate)
+	}
+	return candidate, nil
+}
+
 func readJSONText(raw map[string]any, keys ...string) string {
 	for _, key := range keys {
 		value, ok := raw[key]
@@ -2451,27 +2598,49 @@ func readJSONText(raw map[string]any, keys ...string) string {
 	return ""
 }
 
-func jsonContainsServerInstallRule(value any) bool {
-	switch typed := value.(type) {
-	case map[string]any:
-		for key, child := range typed {
-			if strings.EqualFold(key, "IsServer") {
-				if b, ok := child.(bool); ok && b {
-					return true
-				}
-			}
-			if jsonContainsServerInstallRule(child) {
-				return true
-			}
+func firstJSONValue(raw map[string]any, keys ...string) (any, bool) {
+	for _, key := range keys {
+		if value, ok := raw[key]; ok {
+			return value, true
 		}
-	case []any:
-		for _, child := range typed {
-			if jsonContainsServerInstallRule(child) {
-				return true
-			}
+	}
+	return nil, false
+}
+
+func readJSONBool(raw map[string]any, keys ...string) bool {
+	for _, key := range keys {
+		value, ok := raw[key]
+		if !ok {
+			continue
+		}
+		if typed, ok := value.(bool); ok {
+			return typed
 		}
 	}
 	return false
+}
+
+func readJSONStringArray(raw map[string]any, keys ...string) []string {
+	value, ok := firstJSONValue(raw, keys...)
+	if !ok {
+		return nil
+	}
+	items, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	values := make([]string, 0, len(items))
+	for _, item := range items {
+		text, ok := item.(string)
+		if !ok {
+			continue
+		}
+		text = strings.TrimSpace(text)
+		if text != "" {
+			values = append(values, text)
+		}
+	}
+	return values
 }
 
 func sanitizeFolderName(input string) string {

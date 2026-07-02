@@ -269,6 +269,106 @@ func TestWorkshopModDownloadExtractsSingleArchiveContent(t *testing.T) {
 	}
 }
 
+func TestWorkshopModDownloadInstallsServerPakInstallRule(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamRoot := t.TempDir()
+	steamPath := filepath.Join(steamRoot, steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("fake steamcmd"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+
+	const workshopID = "555666777"
+	const packageName = "DungeonMimicChest"
+	const pakName = "DungeonMimicChest_P.pak"
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		contentRoot := filepath.Join(cmd.Dir, "steamapps", "workshop", "content", palworldWorkshopAppID, workshopID, "DungeonMimicChest")
+		writeWorkshopPakRuleModContent(t, contentRoot, packageName, "1.0.0", pakName, nil)
+		return nil
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": workshopID,
+	})
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("workshop download status = %d, want %d; body=%s", resp.StatusCode, http.StatusCreated, body)
+	}
+	var mod modRecord
+	if err := json.NewDecoder(resp.Body).Decode(&mod); err != nil {
+		t.Fatalf("decode mod: %v", err)
+	}
+	resp.Body.Close()
+
+	if mod.PackageName != packageName || mod.FolderName != workshopID || !mod.ServerSupported {
+		t.Fatalf("unexpected pak rule mod metadata: %#v", mod)
+	}
+	infoPath := filepath.Join(serverPath, "Mods", "Workshop", workshopID, "Info.json")
+	if !fileExists(infoPath) {
+		t.Fatalf("installed Workshop Info.json missing: %s", infoPath)
+	}
+	pakPath := filepath.Join(serverPath, "Pal", "Content", "Paks", "~WorkshopMods", workshopID, pakName)
+	if !fileExists(pakPath) {
+		t.Fatalf("server pak was not installed: %s", pakPath)
+	}
+	if mod.InstallPath != filepath.Dir(pakPath) {
+		t.Fatalf("install_path = %q, want %q", mod.InstallPath, filepath.Dir(pakPath))
+	}
+}
+
+func TestWorkshopModDownloadRejectsUE4SSDependency(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	steamRoot := t.TempDir()
+	steamPath := filepath.Join(steamRoot, steamCMDName())
+	if err := os.WriteFile(steamPath, []byte("fake steamcmd"), 0o755); err != nil {
+		t.Fatalf("write fake steamcmd: %v", err)
+	}
+	setTestAppSetting(t, panel, "steamcmd_path", steamPath)
+
+	const workshopID = "888999000"
+	const packageName = "DungeonMimicChest"
+	panel.commandRunner = func(cmd *exec.Cmd) error {
+		contentRoot := filepath.Join(cmd.Dir, "steamapps", "workshop", "content", palworldWorkshopAppID, workshopID, "DungeonMimicChest")
+		writeWorkshopPakRuleModContent(t, contentRoot, packageName, "1.0.0", "DungeonMimicChest_P.pak", []string{"UE4SSExperimentalPW"})
+		return nil
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/mods/workshop/download", map[string]string{
+		"workshop_id": workshopID,
+	})
+	if resp.StatusCode != http.StatusBadRequest {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("workshop download status = %d, want %d; body=%s", resp.StatusCode, http.StatusBadRequest, body)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read response body: %v", err)
+	}
+	resp.Body.Close()
+	if !strings.Contains(string(body), "depends on UE4SS") {
+		t.Fatalf("response missing UE4SS rejection: %s", body)
+	}
+	if fileExists(filepath.Join(serverPath, "Pal", "Content", "Paks", "~WorkshopMods", workshopID)) {
+		t.Fatalf("UE4SS mod pak directory was installed despite rejection")
+	}
+}
+
 func TestWorkshopModDownloadInstallsManagedPakLayout(t *testing.T) {
 	panel, err := New(t.TempDir())
 	if err != nil {
@@ -2748,6 +2848,56 @@ func writeSampleModContent(t *testing.T, root, packageName, version string) {
 	}
 	if err := os.WriteFile(filepath.Join(root, "Data", "file.txt"), []byte("payload"), 0o644); err != nil {
 		t.Fatalf("write sample mod payload: %v", err)
+	}
+}
+
+func writeWorkshopPakRuleModContent(t *testing.T, root, packageName, version, pakName string, dependencies []string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Join(root, "Paks"), 0o755); err != nil {
+		t.Fatalf("mkdir workshop pak content: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "Scripts"), 0o755); err != nil {
+		t.Fatalf("mkdir workshop script content: %v", err)
+	}
+	dependencyItems := make([]string, 0, len(dependencies))
+	for _, dependency := range dependencies {
+		dependencyItems = append(dependencyItems, `"`+dependency+`"`)
+	}
+	info := `{
+  "ModName": "Dungeon Mimic Chests Restored",
+  "PackageName": "` + packageName + `",
+  "Version": "` + version + `",
+  "Author": "Tester",
+  "Dependencies": [` + strings.Join(dependencyItems, ",") + `],
+  "InstallRule": [
+    {
+      "Type": "Paks",
+      "Targets": ["./Paks"]
+    },
+    {
+      "Type": "Lua",
+      "Targets": ["./Scripts"]
+    },
+    {
+      "Type": "Paks",
+      "IsServer": true,
+      "Targets": ["./Paks"]
+    },
+    {
+      "Type": "Lua",
+      "IsServer": true,
+      "Targets": ["./Scripts"]
+    }
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(root, "Info.json"), []byte(info), 0o644); err != nil {
+		t.Fatalf("write workshop Info.json: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "Paks", pakName), []byte("pak payload"), 0o644); err != nil {
+		t.Fatalf("write workshop pak: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "Scripts", "main.lua"), []byte("print('unsupported')"), 0o644); err != nil {
+		t.Fatalf("write workshop lua script: %v", err)
 	}
 }
 
