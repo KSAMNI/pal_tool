@@ -21,9 +21,9 @@ ghcr.io/ksamni/palpanel-lite:latest
 
 ## 一键部署
 
-### 使用根目录 docker-compose.yml
+### 只用 docker-compose.yml 和 .env 部署
 
-最简单的部署方式是在仓库根目录直接使用已经提供的 `docker-compose.yml`。这个文件默认会从 GHCR 拉取运行镜像，不需要你手动构建镜像。
+最简单的部署方式是准备一个部署目录，放入 `docker-compose.yml` 和 `.env` 两个文件，然后让 Docker Compose 直接从 GHCR 拉取镜像运行。这个流程不需要克隆源码，也不需要本地构建镜像。
 
 在服务器上准备部署目录：
 
@@ -32,37 +32,93 @@ mkdir -p /srv/palpanel
 cd /srv/palpanel
 ```
 
-克隆项目：
+下载根目录的 `docker-compose.yml` 和 `.env.example`，并把 `.env.example` 保存为本地 `.env`：
 
 ```bash
-git clone https://github.com/KSAMNI/pal_tool.git .
+curl -fsSLo docker-compose.yml https://raw.githubusercontent.com/KSAMNI/pal_tool/main/docker-compose.yml
+curl -fsSLo .env https://raw.githubusercontent.com/KSAMNI/pal_tool/main/.env.example
 ```
 
-确认当前目录里有根目录 Compose 文件：
+创建持久化目录：
 
 ```bash
-ls -la docker-compose.yml .env.example
-```
-
-如果你不是通过 `git clone` 部署，而是只想复制最少文件运行，至少需要把项目根目录的这两个文件放到同一个部署目录：
-
-```text
-docker-compose.yml
-.env.example
-```
-
-创建本地配置和持久化目录：
-
-```bash
-cp .env.example .env
 mkdir -p data PalServer
 ```
 
-直接在这个目录执行 Docker Compose 命令即可。没有指定 `-f` 时，Docker Compose 会自动使用当前目录下的 `docker-compose.yml`：
+启动。没有指定 `-f` 时，Docker Compose 会自动使用当前目录下的 `docker-compose.yml`，并通过 `--env-file .env` 读取本地配置：
 
 ```bash
 docker compose --env-file .env pull
 docker compose --env-file .env up -d
+```
+
+这会从 `PALPANEL_IMAGE` 指定的 GHCR 镜像拉取并启动 `palpanel` 服务，不会构建本地镜像。
+
+如果服务器不能访问 `raw.githubusercontent.com`，也可以手动创建下面两个文件。
+
+`docker-compose.yml`：
+
+```yaml
+services:
+  palpanel:
+    image: ${PALPANEL_IMAGE:-ghcr.io/ksamni/palpanel-lite:latest}
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 60s
+    environment:
+      HOME: /data
+      PALPANEL_ADDR: 0.0.0.0:8080
+      PALPANEL_DATA_DIR: /data
+      PALPANEL_UID: ${PALPANEL_UID:-10001}
+      PALPANEL_GID: ${PALPANEL_GID:-10001}
+      PALPANEL_FIX_OWNERSHIP: ${PALPANEL_FIX_OWNERSHIP:-true}
+      PALPANEL_STEAMCMD_DIR: ${PALPANEL_STEAMCMD_DIR:-/data/steamcmd}
+      PALPANEL_STEAMCMD_USERNAME: ${PALPANEL_STEAMCMD_USERNAME:-}
+      PALPANEL_STEAMCMD_PASSWORD: ${PALPANEL_STEAMCMD_PASSWORD:-}
+      PALPANEL_DEFAULT_PAL_SERVER_PATH: ${PALPANEL_DEFAULT_PAL_SERVER_PATH:-/palserver}
+      PALPANEL_PAL_SERVER_PATH: /palserver
+      PALWORLD_SERVER_PATH: /palserver
+      PAL_SERVER_PATH: /palserver
+      TZ: ${TZ:-UTC}
+    ports:
+      - "127.0.0.1:${PALPANEL_PORT:-8080}:8080"
+      - "${PALWORLD_GAME_HOST_PORT:-8211}:${PALWORLD_GAME_PORT:-8211}/udp"
+    volumes:
+      - type: bind
+        source: ${PALPANEL_DATA_DIR:-./data}
+        target: /data
+      - type: bind
+        source: ${PALPANEL_SERVER_DIR:-./PalServer}
+        target: /palserver
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+```
+
+创建 `.env`：
+
+```env
+PALPANEL_IMAGE=ghcr.io/ksamni/palpanel-lite:latest
+PALPANEL_PORT=8080
+
+PALWORLD_GAME_HOST_PORT=8211
+PALWORLD_GAME_PORT=8211
+
+PALPANEL_DATA_DIR=./data
+PALPANEL_SERVER_DIR=./PalServer
+
+PALPANEL_STEAMCMD_DIR=/data/steamcmd
+PALPANEL_STEAMCMD_USERNAME=
+PALPANEL_STEAMCMD_PASSWORD=
+PALPANEL_DEFAULT_PAL_SERVER_PATH=/palserver
+
+PALPANEL_UID=10001
+PALPANEL_GID=10001
+PALPANEL_FIX_OWNERSHIP=true
+TZ=Asia/Hong_Kong
 ```
 
 这会启动 `palpanel` 服务，并挂载当前目录下的：
@@ -72,7 +128,7 @@ docker compose --env-file .env up -d
 ./PalServer
 ```
 
-根目录 `docker-compose.yml` 默认行为：
+这个 `docker-compose.yml` 的默认行为：
 
 - 拉取 `${PALPANEL_IMAGE}`，默认是 `ghcr.io/ksamni/palpanel-lite:latest`。
 - 将面板发布到宿主机 `127.0.0.1:${PALPANEL_PORT:-8080}`。
