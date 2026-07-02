@@ -17,6 +17,18 @@ ghcr.io/ksamni/palpanel-lite:latest
 - Palworld REST API 和 RCON 默认不对外发布，应通过面板后端访问。
 - Docker 运行镜像主要面向 Linux amd64 主机，因为 SteamCMD 和 Palworld Dedicated Server 是 x86_64 目标。
 
+## 界面预览
+
+![登录界面](screenshot/login.png)
+
+![面板总览](screenshot/panel.png)
+
+![服务器管理](screenshot/server.png)
+
+![配置编辑](screenshot/config.png)
+
+![MOD 管理](screenshot/mod.png)
+
 ## 一键部署
 
 ### 只用 docker-compose.yml 和 .env 部署
