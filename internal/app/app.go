@@ -223,6 +223,7 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("POST /api/server/rest-stop", a.withAuth(a.handleServerRestStop))
 	mux.HandleFunc("GET /api/server/logs", a.withAuth(a.handleServerLogs))
 	mux.HandleFunc("GET /api/tasks", a.withAuth(a.handleTasks))
+	mux.HandleFunc("DELETE /api/tasks", a.withAuth(a.handleClearTasks))
 	mux.HandleFunc("GET /api/schedules", a.withAuth(a.handleGetSchedules))
 	mux.HandleFunc("PUT /api/schedules", a.withAuth(a.handlePutSchedules))
 	mux.HandleFunc("GET /api/events", a.withAuth(a.handleRuntimeEvents))

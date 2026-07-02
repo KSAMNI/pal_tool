@@ -148,6 +148,20 @@ func (a *App) handleTasks(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tasks)
 }
 
+func (a *App) handleClearTasks(w http.ResponseWriter, r *http.Request) {
+	if _, err := a.db.Exec(`DELETE FROM tasks WHERE status != 'running'`); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	tasks, err := a.listTasks(10)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	a.broadcastRuntimeEvent(runtimeEvent{Type: "tasks", Tasks: tasks})
+	writeJSON(w, http.StatusOK, tasks)
+}
+
 func (a *App) startSteamCMDTask(taskType string) (taskRecord, error) {
 	settings, err := a.loadSettings()
 	if err != nil {

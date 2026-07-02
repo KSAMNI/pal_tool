@@ -52,6 +52,7 @@ func TestServerControlRoutes(t *testing.T) {
 		{method: http.MethodGet, path: "/api/server/status", status: http.StatusOK},
 		{method: http.MethodGet, path: "/api/server/logs", status: http.StatusOK},
 		{method: http.MethodGet, path: "/api/tasks", status: http.StatusOK},
+		{method: http.MethodDelete, path: "/api/tasks", status: http.StatusOK},
 		{method: http.MethodPost, path: "/api/server/install", status: http.StatusBadRequest},
 		{method: http.MethodPost, path: "/api/server/update", status: http.StatusPreconditionRequired},
 		{method: http.MethodPost, path: "/api/server/update", status: http.StatusBadRequest, confirm: true},
@@ -66,6 +67,40 @@ func TestServerControlRoutes(t *testing.T) {
 			t.Fatalf("%s %s status = %d, want %d", tc.method, tc.path, resp.StatusCode, tc.status)
 		}
 		resp.Body.Close()
+	}
+}
+
+func TestClearTasksRemovesFinishedAndKeepsRunning(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+	server, client := newAuthenticatedTestServer(t, panel)
+
+	finishedID, err := panel.createTask("steamcmd_update")
+	if err != nil {
+		t.Fatalf("createTask(finished) error = %v", err)
+	}
+	if err := panel.finishTask(finishedID, "failed"); err != nil {
+		t.Fatalf("finishTask() error = %v", err)
+	}
+	runningID, err := panel.createTask("backup")
+	if err != nil {
+		t.Fatalf("createTask(running) error = %v", err)
+	}
+
+	resp := doJSON(t, client, http.MethodDelete, server.URL+"/api/tasks", nil)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("DELETE /api/tasks status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var remaining []taskRecord
+	if err := json.NewDecoder(resp.Body).Decode(&remaining); err != nil {
+		t.Fatalf("decode DELETE response: %v", err)
+	}
+	if len(remaining) != 1 || remaining[0].ID != runningID || remaining[0].Status != "running" {
+		t.Fatalf("remaining tasks = %+v, want only running task %d", remaining, runningID)
 	}
 }
 

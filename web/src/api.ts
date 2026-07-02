@@ -188,7 +188,7 @@ export interface PalDashboard {
 }
 
 export interface RuntimeEvent {
-  type: 'snapshot' | 'task' | 'server_log' | 'operation' | 'error'
+  type: 'snapshot' | 'task' | 'tasks' | 'server_log' | 'operation' | 'error'
   task?: TaskRecord
   tasks?: TaskRecord[]
   server_logs?: ServerLogEntry[]

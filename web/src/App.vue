@@ -158,8 +158,8 @@
                 </n-button>
               </template>
               <p class="schedule-hint">
-                按面板所在时区每天执行<template v-if="scheduleClockText">（{{ scheduleClockText }}）</template>；关闭或重启前会尝试通过 REST API 保存世界。
-                <span v-if="scheduleTimezoneMismatch" class="schedule-tz-warning">面板时区与浏览器不一致，计划时间以面板时区为准；Docker 部署可通过 TZ 环境变量调整。</span>
+                按面板所在时区每天执行；关闭或重启前会尝试通过 REST API 保存世界。
+                <span v-if="scheduleTimezoneMismatch" class="schedule-tz-warning">注意：面板时区为 {{ scheduleTimezone }}（获取时面板时间 {{ scheduleClock }}），与浏览器不一致，计划时间以面板时区为准。</span>
               </p>
               <n-empty v-if="schedules.length === 0" description="暂无定时任务，点击右上角添加" size="small" class="schedule-empty" />
               <div v-else class="schedule-list">
@@ -861,6 +861,17 @@
                   </n-tag>
                 </div>
               </template>
+              <template #header-extra>
+                <n-popconfirm @positive-click="clearTasks">
+                  <template #trigger>
+                    <n-button size="small" quaternary :loading="tasksClearBusy" :disabled="tasks.length === 0">
+                      <template #icon><Trash2 :size="15" /></template>
+                      清空历史
+                    </n-button>
+                  </template>
+                  清空全部已完成的任务记录？运行中的任务会保留。
+                </n-popconfirm>
+              </template>
               <pre class="log-box">{{ latestTaskLog }}</pre>
             </n-card>
 
@@ -921,6 +932,7 @@ const scheduleBusy = ref(false)
 const savedScheduleSnapshot = ref('[]')
 const scheduleServerTime = ref('')
 const scheduleTimezone = ref('')
+const tasksClearBusy = ref(false)
 const modActionBusy = ref('')
 const workshopModInput = ref('')
 const modFileInput = ref<HTMLInputElement | null>(null)
@@ -995,11 +1007,7 @@ const scheduleActionLabels: Record<ScheduleAction, string> = {
 
 const enabledScheduleCount = computed(() => schedules.value.filter((item) => item.enabled).length)
 const schedulesDirty = computed(() => scheduleSnapshot(schedules.value) !== savedScheduleSnapshot.value)
-const scheduleClockText = computed(() => {
-  if (!scheduleTimezone.value) return ''
-  const clock = scheduleServerTime.value.slice(11, 16)
-  return clock ? `${scheduleTimezone.value}，获取时面板时间为 ${clock}` : scheduleTimezone.value
-})
+const scheduleClock = computed(() => scheduleServerTime.value.slice(11, 16))
 const scheduleTimezoneMismatch = computed(() => {
   const match = scheduleServerTime.value.match(/(?:Z|([+-])(\d{2}):(\d{2}))$/)
   if (!match) return false
@@ -1705,6 +1713,22 @@ async function saveSchedules() {
   }
 }
 
+async function clearTasks() {
+  tasksClearBusy.value = true
+  try {
+    const next = await apiDelete<TaskRecord[]>('/api/tasks')
+    tasks.value = Array.isArray(next) ? next : []
+    if (palDashboard.value) {
+      palDashboard.value.recent_tasks = palDashboard.value.recent_tasks.filter((item) => item.status === 'running')
+    }
+    message.success('历史任务已清空')
+  } catch (err) {
+    message.error((err as Error).message)
+  } finally {
+    tasksClearBusy.value = false
+  }
+}
+
 function openModUpload() {
   if (!ensureModMutationAllowed()) return
   modFileInput.value?.click()
@@ -2268,6 +2292,10 @@ function applyRuntimeEvent(event: RuntimeEvent) {
   }
   if (event.type === 'task' && event.task) {
     upsertTask(event.task)
+    return
+  }
+  if (event.type === 'tasks') {
+    tasks.value = event.tasks ?? []
     return
   }
   if (event.type === 'server_log' && event.server_logs) {
