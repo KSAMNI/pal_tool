@@ -472,6 +472,91 @@ func TestConfigGetMissingDoesNotInitialize(t *testing.T) {
 	assertNoTasks(t, panel)
 }
 
+func TestConfigGetEmptyConfigReturnsNotInitialized(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	configPath, _, _, err := palConfigPaths(serverPath)
+	if err != nil {
+		t.Fatalf("palConfigPaths() error = %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		t.Fatalf("mkdir config dir: %v", err)
+	}
+	if err := os.WriteFile(configPath, nil, 0o644); err != nil {
+		t.Fatalf("write empty config: %v", err)
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodGet, server.URL+"/api/config", nil)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("GET /api/config status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read config: %v", err)
+	}
+	if len(content) != 0 {
+		t.Fatalf("GET /api/config unexpectedly rewrote empty config: %q", string(content))
+	}
+	assertNoTasks(t, panel)
+}
+
+func TestConfigInitRepairsEmptyConfigFromDefault(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	serverPath := t.TempDir()
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	configPath, defaultPath, _, err := palConfigPaths(serverPath)
+	if err != nil {
+		t.Fatalf("palConfigPaths() error = %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		t.Fatalf("mkdir config dir: %v", err)
+	}
+	defaultContent := `[/Script/Pal.PalGameWorldSettings]
+OptionSettings=(ServerName="Recovered From Default",ServerPlayerMaxNum=16)
+`
+	if err := os.WriteFile(defaultPath, []byte(defaultContent), 0o644); err != nil {
+		t.Fatalf("write default config: %v", err)
+	}
+	if err := os.WriteFile(configPath, []byte("\n"), 0o644); err != nil {
+		t.Fatalf("write empty config shell: %v", err)
+	}
+
+	server, client := newAuthenticatedTestServer(t, panel)
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/config/init", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("POST /api/config/init status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var payload palConfigPayload
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode payload: %v", err)
+	}
+	resp.Body.Close()
+	if payload.Values.ServerName != "Recovered From Default" {
+		t.Fatalf("ServerName = %q, want %q", payload.Values.ServerName, "Recovered From Default")
+	}
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read repaired config: %v", err)
+	}
+	if string(content) != defaultContent {
+		t.Fatalf("repaired config = %q, want copied default content", string(content))
+	}
+	assertNoTasks(t, panel)
+}
+
 func TestConfigGetRejectsOversizedConfig(t *testing.T) {
 	setPalConfigFileLimit(t, 128)
 	panel, err := New(t.TempDir())

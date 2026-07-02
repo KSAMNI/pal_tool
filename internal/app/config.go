@@ -21,6 +21,7 @@ OptionSettings=(Difficulty=None,RandomizerType=None,RandomizerSeed="",bIsRandomi
 `
 
 var errConfigNotInitialized = errors.New("PalWorldSettings.ini is not initialized; call POST /api/config/init")
+var errPalConfigOptionSettingsNotFound = errors.New("OptionSettings=(...) was not found in PalWorldSettings.ini")
 var errPalConfigFileTooLarge = errors.New("palworld config file is too large")
 var maxPalConfigFileBytes int64 = 4 << 20
 
@@ -185,7 +186,8 @@ func (a *App) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	doc, err := a.loadPalConfigWithSettings(settings, false)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		needsInit, initErr := palConfigNeedsInitialization(settings)
+		if initErr == nil && needsInit {
 			writeError(w, http.StatusNotFound, errConfigNotInitialized)
 			return
 		}
@@ -326,7 +328,7 @@ func palConfigNeedsInitialization(settings settingsPayload) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return !fileExists(configPath), nil
+	return palConfigPathNeedsInitialization(configPath)
 }
 
 func (a *App) loadPalConfig(create bool) (palConfigDocument, error) {
@@ -347,12 +349,16 @@ func (a *App) loadPalConfigWithSettings(settings settingsPayload, create bool) (
 		return palConfigDocument{}, err
 	}
 	if create {
-		if !fileExists(configPath) {
+		needsInit, err := palConfigPathNeedsInitialization(configPath)
+		if err != nil {
+			return palConfigDocument{}, err
+		}
+		if needsInit {
 			if err := a.ensureNoExternalServerRunning(settings); err != nil {
 				return palConfigDocument{}, err
 			}
 		}
-		if err := ensurePalConfig(configPath, defaultPath); err != nil {
+		if err := ensurePalConfig(configPath, defaultPath, needsInit); err != nil {
 			return palConfigDocument{}, err
 		}
 	}
@@ -390,8 +396,8 @@ func ensureWithin(base, target string) error {
 	return fmt.Errorf("path escapes server directory: %s", target)
 }
 
-func ensurePalConfig(configPath, defaultPath string) error {
-	if fileExists(configPath) {
+func ensurePalConfig(configPath, defaultPath string, initialize bool) error {
+	if !initialize {
 		return nil
 	}
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
@@ -404,6 +410,25 @@ func ensurePalConfig(configPath, defaultPath string) error {
 		return err
 	}
 	return atomicWriteFile(configPath, []byte(defaultPalWorldSettings), 0o644)
+}
+
+func palConfigPathNeedsInitialization(configPath string) (bool, error) {
+	if !fileExists(configPath) {
+		return true, nil
+	}
+	contentBytes, err := readPalConfigFile(configPath)
+	if err != nil {
+		return false, err
+	}
+	return palConfigContentNeedsInitialization(string(contentBytes)), nil
+}
+
+func palConfigContentNeedsInitialization(content string) bool {
+	if strings.TrimSpace(content) == "" {
+		return true
+	}
+	_, _, _, err := findOptionSettings(content)
+	return errors.Is(err, errPalConfigOptionSettingsNotFound)
 }
 
 func readPalConfigDocument(configPath, defaultPath, platform string) (palConfigDocument, error) {
@@ -437,7 +462,7 @@ func findOptionSettings(content string) (start int, end int, optionText string, 
 	marker := "OptionSettings=("
 	start = strings.Index(content, marker)
 	if start < 0 {
-		return 0, 0, "", errors.New("OptionSettings=(...) was not found in PalWorldSettings.ini")
+		return 0, 0, "", errPalConfigOptionSettingsNotFound
 	}
 	valueStart := start + len(marker)
 	quote := rune(0)
