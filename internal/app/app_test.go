@@ -84,6 +84,41 @@ func TestNewDoesNotOverwritePersistedPalServerPathFromEnvironment(t *testing.T) 
 	}
 }
 
+func TestNewFailsStaleRunningTasks(t *testing.T) {
+	dataDir := t.TempDir()
+	panel, err := New(dataDir)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	taskID, err := panel.createTask("server_update")
+	if err != nil {
+		t.Fatalf("createTask() error = %v", err)
+	}
+	if err := panel.Close(); err != nil {
+		t.Fatalf("Close() error = %v", err)
+	}
+
+	restarted, err := New(dataDir)
+	if err != nil {
+		t.Fatalf("New() after restart error = %v", err)
+	}
+	defer restarted.Close()
+
+	task, err := restarted.getTask(taskID)
+	if err != nil {
+		t.Fatalf("getTask() error = %v", err)
+	}
+	if task.Status != "failed" {
+		t.Fatalf("stale task status = %q, want failed", task.Status)
+	}
+	if !strings.Contains(task.Log, "panel process restarted") {
+		t.Fatalf("stale task log = %q, want restart note", task.Log)
+	}
+	if task.FinishedAt == "" {
+		t.Fatalf("stale task finished_at is empty")
+	}
+}
+
 func TestSessionCookieSecureRespectsRequestScheme(t *testing.T) {
 	for _, tc := range []struct {
 		name       string

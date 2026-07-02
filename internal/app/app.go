@@ -145,6 +145,10 @@ func New(dataDir string) (*App, error) {
 		db.Close()
 		return nil, err
 	}
+	if err := app.failStaleRunningTasks(); err != nil {
+		db.Close()
+		return nil, err
+	}
 	if err := app.pruneFinishedTasks(); err != nil {
 		db.Close()
 		return nil, err

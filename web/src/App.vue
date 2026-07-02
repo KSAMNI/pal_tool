@@ -992,7 +992,7 @@ const enabledScheduleCount = computed(() => schedules.value.filter((item) => ite
 const schedulesDirty = computed(() => scheduleSnapshot(schedules.value) !== savedScheduleSnapshot.value)
 
 const latestTask = computed(() => tasks.value[0] ?? null)
-const activeTask = computed(() => Boolean(status.value?.operation_running) || tasks.value.some((task) => task.status === 'running'))
+const activeTask = computed(() => Boolean(status.value?.operation_running))
 const settingsPathRetargetBlocked = computed(() => {
   if (!status.value?.running || !status.value?.pal_server_path) return false
   return !samePathDraft(settings.pal_server_path, status.value.pal_server_path)
@@ -1312,13 +1312,6 @@ async function loadDashboard() {
 
 async function refreshRuntime() {
   const shouldRefreshPalDashboard = !palBusy.value && Date.now() - lastPalDashboardRefreshAt >= palDashboardPollIntervalMs
-  if (realtimeConnected.value) {
-    status.value = await apiGet<ServerStatus>('/api/server/status')
-    if (shouldRefreshPalDashboard) {
-      await loadPalDashboard(false)
-    }
-    return
-  }
   const [nextStatus, nextTasks, nextLogs] = await Promise.all([
     apiGet<ServerStatus>('/api/server/status'),
     apiGet<TaskRecord[]>('/api/tasks'),

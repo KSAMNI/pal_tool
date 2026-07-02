@@ -492,6 +492,24 @@ func (a *App) createTask(taskType string) (int64, error) {
 	return taskID, nil
 }
 
+func (a *App) failStaleRunningTasks() error {
+	_, err := a.db.Exec(
+		`UPDATE tasks
+		 SET status = ?, finished_at = ?,
+		     log = CASE
+		       WHEN log IS NULL OR log = '' THEN ?
+		       ELSE log || ?
+		     END
+		 WHERE status = ?`,
+		"failed",
+		time.Now().UTC().Format(time.RFC3339),
+		"Task did not finish before the panel process restarted.",
+		"\nTask did not finish before the panel process restarted.",
+		"running",
+	)
+	return err
+}
+
 func (a *App) getTask(taskID int64) (taskRecord, error) {
 	var task taskRecord
 	var finished sql.NullString
