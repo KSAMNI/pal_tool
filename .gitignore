@@ -13,6 +13,10 @@ web/vite.config.d.ts
 *.tsbuildinfo
 *.log
 *.tmp
+findings.md
+palworld_panel_plan.md
+progress.md
+task_plan.md
 palpanel
 palpanel.exe
 !cmd/
