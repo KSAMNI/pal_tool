@@ -2,7 +2,7 @@
 
 Single-machine, single-server Palworld dedicated server management panel.
 
-Chinese deployment and user guide: [README.zh-CN.md](README.zh-CN.md)
+中文部署和用户指南：[中文指导](README.zh-CN.md)
 
 Current implementation status:
 
