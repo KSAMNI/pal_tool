@@ -50,6 +50,7 @@
           <n-tabs v-model:value="activeTab" type="segment" animated class="workspace-tabs">
             <n-tab-pane name="server" tab="服务器" display-directive="show" class="workspace-tab-pane">
               <section class="grid">
+            <div class="server-column">
             <n-card title="服务器状态">
               <div class="status-row">
                 <span>系统</span>
@@ -140,6 +141,55 @@
                 </n-popconfirm>
               </n-space>
             </n-card>
+
+            <n-card class="schedule-card">
+              <template #header>
+                <div class="card-header">
+                  <span>定时任务</span>
+                  <n-tag size="small" :type="enabledScheduleCount > 0 ? 'success' : 'default'">
+                    {{ enabledScheduleCount }}/{{ schedules.length }} 启用
+                  </n-tag>
+                </div>
+              </template>
+              <template #header-extra>
+                <n-button size="small" :disabled="schedules.length >= maxSchedules" @click="addSchedule">
+                  <template #icon><Plus :size="15" /></template>
+                  添加
+                </n-button>
+              </template>
+              <p class="schedule-hint">按服务器本地时间每天执行；关闭或重启前会尝试通过 REST API 保存世界。</p>
+              <n-empty v-if="schedules.length === 0" description="暂无定时任务，点击右上角添加" size="small" class="schedule-empty" />
+              <div v-else class="schedule-list">
+                <div v-for="(item, index) in schedules" :key="item.id ?? `draft-${index}`" class="schedule-row">
+                  <n-time-picker
+                    v-model:formatted-value="item.time"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    size="small"
+                    class="schedule-time"
+                    :actions="['confirm']"
+                  />
+                  <n-select
+                    v-model:value="item.action"
+                    size="small"
+                    :options="scheduleActionOptions"
+                    class="schedule-action"
+                  />
+                  <n-switch v-model:value="item.enabled" size="small" />
+                  <n-button size="small" quaternary type="error" title="删除该计划" @click="removeSchedule(index)">
+                    <template #icon><Trash2 :size="15" /></template>
+                  </n-button>
+                </div>
+              </div>
+              <div class="schedule-footer">
+                <n-button size="small" type="primary" :loading="scheduleBusy" :disabled="!schedulesDirty" @click="saveSchedules">
+                  <template #icon><Save :size="15" /></template>
+                  保存计划
+                </n-button>
+                <span v-if="schedulesDirty" class="schedule-dirty-hint">有未保存的修改</span>
+              </div>
+            </n-card>
+            </div>
 
             <n-card title="基础设置">
               <n-form label-placement="top">
@@ -830,9 +880,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { Archive, Download, FileText, FolderOpen, Info, LogOut, Megaphone, Play, Power, PowerOff, RefreshCw, RotateCcw, RotateCw, Save, Square, Trash2, Upload } from 'lucide-vue-next'
+import { Archive, Download, FileText, FolderOpen, Info, LogOut, Megaphone, Play, Plus, Power, PowerOff, RefreshCw, RotateCcw, RotateCw, Save, Square, Trash2, Upload } from 'lucide-vue-next'
 import { createDiscreteApi } from 'naive-ui'
-import { ApiError, apiDelete, apiGet, apiPost, apiPut, apiUpload, type AuthState, type BackupRecord, type ModRecord, type OpenDirectoryResponse, type PalDashboard, type PalConfigField, type PalConfigPayload, type PalConfigValues, type PalPlayer, type RestoreResponse, type RuntimeEvent, type ServerLogs, type ServerStatus, type Settings, type SystemSummary, type TaskRecord } from './api'
+import { ApiError, apiDelete, apiGet, apiPost, apiPut, apiUpload, type AuthState, type BackupRecord, type ModRecord, type OpenDirectoryResponse, type PalDashboard, type PalConfigField, type PalConfigPayload, type PalConfigValues, type PalPlayer, type RestoreResponse, type RuntimeEvent, type ScheduleAction, type ScheduleRecord, type SchedulesPayload, type ServerLogs, type ServerStatus, type Settings, type SystemSummary, type TaskRecord } from './api'
 
 const { message } = createDiscreteApi(['message'])
 
@@ -863,6 +913,9 @@ const backupBusy = ref(false)
 const backupActionBusy = ref('')
 const mods = ref<ModRecord[]>([])
 const modBusy = ref(false)
+const schedules = ref<ScheduleRecord[]>([])
+const scheduleBusy = ref(false)
+const savedScheduleSnapshot = ref('[]')
 const modActionBusy = ref('')
 const workshopModInput = ref('')
 const modFileInput = ref<HTMLInputElement | null>(null)
@@ -923,6 +976,20 @@ const actionLabels: Record<ServerAction, string> = {
   restart: '服务器已重启'
 }
 const performanceLaunchFlags = ['-useperfthreads', '-NoAsyncLoadingThread', '-UseMultithreadForDS']
+const maxSchedules = 20
+const scheduleActionOptions: Array<{ label: string; value: ScheduleAction }> = [
+  { label: '启动', value: 'start' },
+  { label: '关闭', value: 'stop' },
+  { label: '重启', value: 'restart' }
+]
+const scheduleActionLabels: Record<ScheduleAction, string> = {
+  start: '启动',
+  stop: '关闭',
+  restart: '重启'
+}
+
+const enabledScheduleCount = computed(() => schedules.value.filter((item) => item.enabled).length)
+const schedulesDirty = computed(() => scheduleSnapshot(schedules.value) !== savedScheduleSnapshot.value)
 
 const latestTask = computed(() => tasks.value[0] ?? null)
 const activeTask = computed(() => Boolean(status.value?.operation_running) || tasks.value.some((task) => task.status === 'running'))
@@ -1240,7 +1307,7 @@ async function loadDashboard() {
   status.value = nextStatus
   tasks.value = nextTasks
   serverLogs.value = nextLogs.logs
-  await Promise.all([loadPalDashboard(false), loadConfig(), loadBackups(), loadMods()])
+  await Promise.all([loadPalDashboard(false), loadConfig(), loadBackups(), loadMods(), loadSchedules()])
 }
 
 async function refreshRuntime() {
@@ -1567,6 +1634,61 @@ async function loadMods() {
     message.error((err as Error).message)
   } finally {
     modBusy.value = false
+  }
+}
+
+function scheduleSnapshot(items: ScheduleRecord[]): string {
+  return JSON.stringify(items.map((item) => ({ time: item.time, action: item.action, enabled: item.enabled })))
+}
+
+async function loadSchedules() {
+  try {
+    const payload = await apiGet<SchedulesPayload>('/api/schedules')
+    schedules.value = Array.isArray(payload.schedules) ? payload.schedules : []
+    savedScheduleSnapshot.value = scheduleSnapshot(schedules.value)
+  } catch (err) {
+    message.error((err as Error).message)
+  }
+}
+
+function addSchedule() {
+  if (schedules.value.length >= maxSchedules) {
+    message.warning(`最多支持 ${maxSchedules} 条定时任务`)
+    return
+  }
+  schedules.value.push({ time: '04:00', action: 'restart', enabled: true })
+}
+
+function removeSchedule(index: number) {
+  schedules.value.splice(index, 1)
+}
+
+async function saveSchedules() {
+  const seen = new Set<string>()
+  for (const item of schedules.value) {
+    if (!item.time) {
+      message.warning('请为每条定时任务选择时间')
+      return
+    }
+    const key = `${item.time}|${item.action}`
+    if (seen.has(key)) {
+      message.warning(`存在重复的定时任务：${item.time} ${scheduleActionLabels[item.action]}`)
+      return
+    }
+    seen.add(key)
+  }
+  scheduleBusy.value = true
+  try {
+    const payload = await apiPut<SchedulesPayload>('/api/schedules', {
+      schedules: schedules.value.map((item) => ({ time: item.time, action: item.action, enabled: item.enabled }))
+    })
+    schedules.value = Array.isArray(payload.schedules) ? payload.schedules : []
+    savedScheduleSnapshot.value = scheduleSnapshot(schedules.value)
+    message.success('定时任务已保存')
+  } catch (err) {
+    message.error((err as Error).message)
+  } finally {
+    scheduleBusy.value = false
   }
 }
 

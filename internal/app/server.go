@@ -437,7 +437,7 @@ func (a *App) recentServerLogs(limit int) []serverLogEntry {
 	if limit > 0 && len(a.serverLogs) > limit {
 		start = len(a.serverLogs) - limit
 	}
-	return append([]serverLogEntry(nil), a.serverLogs[start:]...)
+	return append(make([]serverLogEntry, 0, len(a.serverLogs)-start), a.serverLogs[start:]...)
 }
 
 func (a *App) appendServerLog(message string) {

@@ -94,6 +94,64 @@ body {
   margin: 0 auto;
 }
 
+.server-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.server-column > .schedule-card {
+  flex: 1;
+}
+
+.schedule-hint {
+  margin: 0 0 12px;
+  color: #667085;
+  font-size: 12px;
+}
+
+.schedule-empty {
+  padding: 16px 0;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-row {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #d9e0e8;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.schedule-time {
+  width: 100%;
+}
+
+.schedule-action {
+  min-width: 0;
+}
+
+.schedule-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.schedule-dirty-hint {
+  color: #b45309;
+  font-size: 12px;
+}
+
 .wide-card {
   max-width: 1180px;
   margin: 16px auto 0;
@@ -575,6 +633,10 @@ body {
 
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .schedule-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .config-grid {

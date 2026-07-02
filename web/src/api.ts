@@ -59,6 +59,19 @@ export interface ServerLogEntry {
   message: string
 }
 
+export type ScheduleAction = 'start' | 'stop' | 'restart'
+
+export interface ScheduleRecord {
+  id?: number
+  time: string
+  action: ScheduleAction
+  enabled: boolean
+}
+
+export interface SchedulesPayload {
+  schedules: ScheduleRecord[]
+}
+
 export interface ServerLogs {
   running: boolean
   logs: ServerLogEntry[]

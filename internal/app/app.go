@@ -150,6 +150,7 @@ func New(dataDir string) (*App, error) {
 		return nil, err
 	}
 	app.startAutoBackupScheduler()
+	app.startScheduledActionRunner()
 	return app, nil
 }
 
@@ -218,6 +219,8 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("POST /api/server/rest-stop", a.withAuth(a.handleServerRestStop))
 	mux.HandleFunc("GET /api/server/logs", a.withAuth(a.handleServerLogs))
 	mux.HandleFunc("GET /api/tasks", a.withAuth(a.handleTasks))
+	mux.HandleFunc("GET /api/schedules", a.withAuth(a.handleGetSchedules))
+	mux.HandleFunc("PUT /api/schedules", a.withAuth(a.handlePutSchedules))
 	mux.HandleFunc("GET /api/events", a.withAuth(a.handleRuntimeEvents))
 	mux.HandleFunc("GET /api/dashboard", a.withAuth(a.handleDashboard))
 	mux.HandleFunc("GET /api/players", a.withAuth(a.handlePlayers))
@@ -286,6 +289,13 @@ func (a *App) migrate() error {
 			log TEXT,
 			created_at DATETIME NOT NULL,
 			finished_at DATETIME
+		)`,
+		`CREATE TABLE IF NOT EXISTS scheduled_actions (
+			id INTEGER PRIMARY KEY,
+			time TEXT NOT NULL,
+			action TEXT NOT NULL,
+			enabled BOOLEAN NOT NULL,
+			created_at DATETIME NOT NULL
 		)`,
 	}
 	for _, stmt := range stmts {
