@@ -36,7 +36,25 @@ type scheduleRecord struct {
 }
 
 type schedulesPayload struct {
-	Schedules []scheduleRecord `json:"schedules"`
+	Schedules  []scheduleRecord `json:"schedules"`
+	ServerTime string           `json:"server_time,omitempty"`
+	Timezone   string           `json:"timezone,omitempty"`
+}
+
+func newSchedulesPayload(items []scheduleRecord) schedulesPayload {
+	now := time.Now()
+	return schedulesPayload{
+		Schedules:  items,
+		ServerTime: now.Format(time.RFC3339),
+		Timezone:   formatUTCOffset(now),
+	}
+}
+
+func formatUTCOffset(now time.Time) string {
+	if _, offset := now.Zone(); offset == 0 {
+		return "UTC"
+	}
+	return "UTC" + now.Format("-07:00")
 }
 
 func (a *App) handleGetSchedules(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +63,7 @@ func (a *App) handleGetSchedules(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, schedulesPayload{Schedules: items})
+	writeJSON(w, http.StatusOK, newSchedulesPayload(items))
 }
 
 func (a *App) handlePutSchedules(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +84,7 @@ func (a *App) handlePutSchedules(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, schedulesPayload{Schedules: saved})
+	writeJSON(w, http.StatusOK, newSchedulesPayload(saved))
 }
 
 func validateSchedules(items []scheduleRecord) error {

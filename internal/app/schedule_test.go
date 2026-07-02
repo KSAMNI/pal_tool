@@ -124,6 +124,12 @@ func TestSchedulesAPIRoundTrip(t *testing.T) {
 	if saved.Schedules[0].ID == 0 || saved.Schedules[1].ID == 0 {
 		t.Fatalf("saved schedules missing ids: %+v", saved.Schedules)
 	}
+	if saved.Timezone == "" {
+		t.Fatalf("saved payload missing timezone: %+v", saved)
+	}
+	if _, err := time.Parse(time.RFC3339, saved.ServerTime); err != nil {
+		t.Fatalf("saved server_time %q not RFC3339: %v", saved.ServerTime, err)
+	}
 
 	respGet := doJSON(t, client, http.MethodGet, server.URL+"/api/schedules", nil)
 	defer respGet.Body.Close()
@@ -159,6 +165,21 @@ func TestSchedulesAPIRoundTrip(t *testing.T) {
 	}
 	if len(cleared.Schedules) != 0 {
 		t.Fatalf("cleared schedules = %+v, want empty", cleared.Schedules)
+	}
+}
+
+func TestFormatUTCOffset(t *testing.T) {
+	utc := time.Date(2026, 7, 2, 4, 0, 0, 0, time.UTC)
+	if got := formatUTCOffset(utc); got != "UTC" {
+		t.Fatalf("formatUTCOffset(UTC) = %q, want UTC", got)
+	}
+	plus8 := time.Date(2026, 7, 2, 12, 0, 0, 0, time.FixedZone("test", 8*3600))
+	if got := formatUTCOffset(plus8); got != "UTC+08:00" {
+		t.Fatalf("formatUTCOffset(+08:00) = %q, want UTC+08:00", got)
+	}
+	minus := time.Date(2026, 7, 2, 12, 0, 0, 0, time.FixedZone("test", -(3*3600+30*60)))
+	if got := formatUTCOffset(minus); got != "UTC-03:30" {
+		t.Fatalf("formatUTCOffset(-03:30) = %q, want UTC-03:30", got)
 	}
 }
 

@@ -111,6 +111,12 @@ body {
   font-size: 12px;
 }
 
+.schedule-tz-warning {
+  display: block;
+  margin-top: 4px;
+  color: #b45309;
+}
+
 .schedule-empty {
   padding: 16px 0;
 }

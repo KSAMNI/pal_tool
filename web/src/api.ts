@@ -70,6 +70,8 @@ export interface ScheduleRecord {
 
 export interface SchedulesPayload {
   schedules: ScheduleRecord[]
+  server_time?: string
+  timezone?: string
 }
 
 export interface ServerLogs {

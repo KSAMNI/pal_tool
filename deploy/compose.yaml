@@ -23,7 +23,7 @@ services:
       PALPANEL_PAL_SERVER_PATH: /palserver
       PALWORLD_SERVER_PATH: /palserver
       PAL_SERVER_PATH: /palserver
-      TZ: ${TZ:-UTC}
+      TZ: ${TZ:-Asia/Shanghai}
     ports:
       - "127.0.0.1:${PALPANEL_PORT:-8080}:8080"
       - "${PALWORLD_GAME_HOST_PORT:-8211}:${PALWORLD_GAME_PORT:-8211}/udp"

@@ -89,7 +89,7 @@ services:
       PALPANEL_PAL_SERVER_PATH: /palserver
       PALWORLD_SERVER_PATH: /palserver
       PAL_SERVER_PATH: /palserver
-      TZ: ${TZ:-UTC}
+      TZ: ${TZ:-Asia/Shanghai}
     ports:
       - "127.0.0.1:${PALPANEL_PORT:-8080}:8080"
       - "${PALWORLD_GAME_HOST_PORT:-8211}:${PALWORLD_GAME_PORT:-8211}/udp"
@@ -128,7 +128,7 @@ PALPANEL_DEFAULT_PAL_SERVER_PATH=/palserver
 PALPANEL_UID=10001
 PALPANEL_GID=10001
 PALPANEL_FIX_OWNERSHIP=true
-TZ=Asia/Hong_Kong
+TZ=Asia/Shanghai
 ```
 
 这会启动 `palpanel` 服务，并挂载当前目录下的：
@@ -225,7 +225,7 @@ PALPANEL_UID=10001
 PALPANEL_GID=10001
 PALPANEL_FIX_OWNERSHIP=true
 
-TZ=Asia/Hong_Kong
+TZ=Asia/Shanghai
 ```
 
 字段含义：
@@ -242,7 +242,7 @@ TZ=Asia/Hong_Kong
 | `PALPANEL_DEFAULT_PAL_SERVER_PATH` | 新数据库首次写入的 PalServer 路径，容器部署应为 `/palserver` |
 | `PALPANEL_UID` / `PALPANEL_GID` | 面板进程运行用户 |
 | `PALPANEL_FIX_OWNERSHIP` | 启动时修复挂载目录权限 |
-| `TZ` | 容器时区 |
+| `TZ` | 容器时区，定时任务的每日执行时间按此时区解释，默认 `Asia/Shanghai`（北京时间） |
 
 Steam Workshop 匿名下载失败时，可以配置 Steam 账号：
 

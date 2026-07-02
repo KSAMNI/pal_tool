@@ -157,7 +157,10 @@
                   添加
                 </n-button>
               </template>
-              <p class="schedule-hint">按服务器本地时间每天执行；关闭或重启前会尝试通过 REST API 保存世界。</p>
+              <p class="schedule-hint">
+                按面板所在时区每天执行<template v-if="scheduleClockText">（{{ scheduleClockText }}）</template>；关闭或重启前会尝试通过 REST API 保存世界。
+                <span v-if="scheduleTimezoneMismatch" class="schedule-tz-warning">面板时区与浏览器不一致，计划时间以面板时区为准；Docker 部署可通过 TZ 环境变量调整。</span>
+              </p>
               <n-empty v-if="schedules.length === 0" description="暂无定时任务，点击右上角添加" size="small" class="schedule-empty" />
               <div v-else class="schedule-list">
                 <div v-for="(item, index) in schedules" :key="item.id ?? `draft-${index}`" class="schedule-row">
@@ -916,6 +919,8 @@ const modBusy = ref(false)
 const schedules = ref<ScheduleRecord[]>([])
 const scheduleBusy = ref(false)
 const savedScheduleSnapshot = ref('[]')
+const scheduleServerTime = ref('')
+const scheduleTimezone = ref('')
 const modActionBusy = ref('')
 const workshopModInput = ref('')
 const modFileInput = ref<HTMLInputElement | null>(null)
@@ -990,6 +995,17 @@ const scheduleActionLabels: Record<ScheduleAction, string> = {
 
 const enabledScheduleCount = computed(() => schedules.value.filter((item) => item.enabled).length)
 const schedulesDirty = computed(() => scheduleSnapshot(schedules.value) !== savedScheduleSnapshot.value)
+const scheduleClockText = computed(() => {
+  if (!scheduleTimezone.value) return ''
+  const clock = scheduleServerTime.value.slice(11, 16)
+  return clock ? `${scheduleTimezone.value}，获取时面板时间为 ${clock}` : scheduleTimezone.value
+})
+const scheduleTimezoneMismatch = computed(() => {
+  const match = scheduleServerTime.value.match(/(?:Z|([+-])(\d{2}):(\d{2}))$/)
+  if (!match) return false
+  const panelOffset = match[1] ? (match[1] === '-' ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3])) : 0
+  return panelOffset !== -new Date().getTimezoneOffset()
+})
 
 const latestTask = computed(() => tasks.value[0] ?? null)
 const activeTask = computed(() => Boolean(status.value?.operation_running))
@@ -1639,6 +1655,8 @@ async function loadSchedules() {
     const payload = await apiGet<SchedulesPayload>('/api/schedules')
     schedules.value = Array.isArray(payload.schedules) ? payload.schedules : []
     savedScheduleSnapshot.value = scheduleSnapshot(schedules.value)
+    scheduleServerTime.value = payload.server_time ?? ''
+    scheduleTimezone.value = payload.timezone ?? ''
   } catch (err) {
     message.error((err as Error).message)
   }
@@ -1677,6 +1695,8 @@ async function saveSchedules() {
     })
     schedules.value = Array.isArray(payload.schedules) ? payload.schedules : []
     savedScheduleSnapshot.value = scheduleSnapshot(schedules.value)
+    scheduleServerTime.value = payload.server_time ?? ''
+    scheduleTimezone.value = payload.timezone ?? ''
     message.success('定时任务已保存')
   } catch (err) {
     message.error((err as Error).message)
