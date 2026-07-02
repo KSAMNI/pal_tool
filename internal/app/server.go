@@ -414,11 +414,17 @@ func (a *App) stopServerProcess(timeout time.Duration) error {
 	}
 
 	a.appendServerLog("Stopping PalServer")
+	deadline := time.Now().Add(timeout)
+	exited := false
 	if a.requestGracefulServerStop(cmd) {
 		select {
 		case <-done:
-			return nil
-		case <-time.After(timeout):
+			exited = true
+			if waitServerProcessTreeGone(cmd.Process, deadline) {
+				return nil
+			}
+			a.appendServerLog("PalServer descendants still running after graceful stop; killing process tree")
+		case <-time.After(time.Until(deadline)):
 			a.appendServerLog("PalServer did not stop before timeout; killing process tree")
 		}
 	} else {
@@ -430,18 +436,22 @@ func (a *App) stopServerProcess(timeout time.Duration) error {
 		_ = cmd.Process.Kill()
 	}
 
-	select {
-	case <-done:
-		return nil
-	case <-time.After(serverForceKillExitWait):
-		a.serverMu.Lock()
-		stillCurrent := a.serverCmd == cmd
-		a.serverMu.Unlock()
-		if !stillCurrent {
-			return nil
+	if !exited {
+		select {
+		case <-done:
+		case <-time.After(serverForceKillExitWait):
+			a.serverMu.Lock()
+			stillCurrent := a.serverCmd == cmd
+			a.serverMu.Unlock()
+			if stillCurrent {
+				return errors.New("PalServer did not exit after force kill")
+			}
 		}
-		return errors.New("PalServer did not exit after force kill")
 	}
+	if !waitServerProcessTreeGone(cmd.Process, time.Now().Add(serverForceKillExitWait)) {
+		return errors.New("PalServer process tree did not exit after force kill")
+	}
+	return nil
 }
 
 func (a *App) requestGracefulServerStop(cmd *exec.Cmd) bool {

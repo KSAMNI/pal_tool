@@ -1308,13 +1308,15 @@ func trackTestServerCommand(t *testing.T, panel *App, cmd *exec.Cmd) chan error 
 	return done
 }
 
-func startFakeServerTree(t *testing.T, panel *App, script string) {
+func startFakeServerTree(t *testing.T, panel *App, script string) *exec.Cmd {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "fake-server.sh")
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		t.Fatalf("write fake server script: %v", err)
 	}
-	trackTestServerCommand(t, panel, buildServerCommand(path, nil))
+	cmd := buildServerCommand(path, nil)
+	trackTestServerCommand(t, panel, cmd)
+	return cmd
 }
 
 func TestStopServerProcessStopsUnixProcessGroup(t *testing.T) {

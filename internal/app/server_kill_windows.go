@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 func serverSysProcAttr() *syscall.SysProcAttr {
@@ -19,6 +20,12 @@ func serverSysProcAttr() *syscall.SysProcAttr {
 // stops rely on the Palworld REST API instead.
 func signalServerStop(*os.Process) bool {
 	return false
+}
+
+// The PalServer.exe launcher waits for its shipping child, so once the
+// tracked process exits the tree is gone; the force path uses taskkill /T.
+func waitServerProcessTreeGone(*os.Process, time.Time) bool {
+	return true
 }
 
 // PalServer.exe is only a launcher for PalServer-Win64-Shipping-Cmd.exe;
