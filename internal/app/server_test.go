@@ -1278,6 +1278,158 @@ func writeInterruptibleFakePalServerBinary(t *testing.T, serverPath string) {
 	}
 }
 
+func trackTestServerCommand(t *testing.T, panel *App, cmd *exec.Cmd) chan error {
+	t.Helper()
+	writer := &serverLogWriter{app: panel}
+	cmd.Stdout = writer
+	cmd.Stderr = writer
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start test server command: %v", err)
+	}
+	done := make(chan error, 1)
+	panel.serverMu.Lock()
+	panel.serverCmd = cmd
+	panel.serverDone = done
+	panel.serverMu.Unlock()
+	go func() {
+		err := cmd.Wait()
+		writer.Flush()
+		panel.serverMu.Lock()
+		if panel.serverCmd == cmd {
+			panel.serverCmd = nil
+			panel.serverDone = nil
+		}
+		panel.serverMu.Unlock()
+		done <- err
+	}()
+	t.Cleanup(func() {
+		_ = terminateServerProcessTree(cmd.Process)
+	})
+	return done
+}
+
+func startFakeServerTree(t *testing.T, panel *App, script string) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "fake-server.sh")
+	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
+		t.Fatalf("write fake server script: %v", err)
+	}
+	trackTestServerCommand(t, panel, buildServerCommand(path, nil))
+}
+
+func TestStopServerProcessStopsUnixProcessGroup(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX process-group semantics")
+	}
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	startFakeServerTree(t, panel, "#!/bin/sh\nsleep 600\n")
+
+	start := time.Now()
+	if err := panel.stopServerProcess(10 * time.Second); err != nil {
+		t.Fatalf("stopServerProcess() error = %v", err)
+	}
+	if elapsed := time.Since(start); elapsed > 3*time.Second {
+		t.Fatalf("graceful stop took %v; child process likely missed the group signal", elapsed)
+	}
+	if panel.isServerRunning() {
+		t.Fatal("server still marked running after stop")
+	}
+}
+
+func TestStopServerProcessKillsStubbornUnixProcessTree(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX process-group semantics")
+	}
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	script := "#!/bin/sh\ntrap '' INT TERM\nsh -c \"trap '' INT TERM; while :; do sleep 5; done\"\n"
+	startFakeServerTree(t, panel, script)
+
+	start := time.Now()
+	if err := panel.stopServerProcess(1 * time.Second); err != nil {
+		t.Fatalf("stopServerProcess() error = %v", err)
+	}
+	if elapsed := time.Since(start); elapsed > 4*time.Second {
+		t.Fatalf("force stop took %v; process tree likely survived the kill", elapsed)
+	}
+	if panel.isServerRunning() {
+		t.Fatal("server still marked running after stop")
+	}
+}
+
+func TestStopServerProcessKillsWindowsProcessTree(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("windows launcher/child process semantics")
+	}
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	systemRoot := os.Getenv("SystemRoot")
+	if systemRoot == "" {
+		systemRoot = `C:\Windows`
+	}
+	data, err := os.ReadFile(filepath.Join(systemRoot, "System32", "ping.exe"))
+	if err != nil {
+		t.Skipf("read ping.exe: %v", err)
+	}
+	child := filepath.Join(t.TempDir(), fmt.Sprintf("palstop-child-%d.exe", os.Getpid()))
+	if err := os.WriteFile(child, data, 0o755); err != nil {
+		t.Fatalf("copy ping.exe: %v", err)
+	}
+
+	cmd := exec.Command("cmd", "/C", child+" -n 600 127.0.0.1")
+	cmd.SysProcAttr = serverSysProcAttr()
+	cmd.WaitDelay = serverWaitDelay
+	trackTestServerCommand(t, panel, cmd)
+
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		running, err := detectProcessByExecutablePath(child)
+		if err == nil && running {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("child process never started")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	start := time.Now()
+	if err := panel.stopServerProcess(5 * time.Second); err != nil {
+		t.Fatalf("stopServerProcess() error = %v", err)
+	}
+	if elapsed := time.Since(start); elapsed > 4*time.Second {
+		t.Fatalf("stop took %v; likely waited on inherited pipes instead of killing the tree", elapsed)
+	}
+
+	deadline = time.Now().Add(5 * time.Second)
+	for {
+		running, _ := detectProcessByExecutablePath(child)
+		if !running {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("child process still running after stop; process tree was not killed")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if panel.isServerRunning() {
+		t.Fatal("server still marked running after stop")
+	}
+}
+
 func writeBackupSource(t *testing.T, serverPath string) {
 	t.Helper()
 	savePath := filepath.Join(serverPath, "Pal", "Saved", "SaveGames", "world.txt")

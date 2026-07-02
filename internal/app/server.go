@@ -30,6 +30,13 @@ var maxFinishedTaskRecords = 200
 const taskLogTruncatedMarker = "[... earlier task log truncated ...]\n"
 const serverLogTruncatedSuffix = " [... truncated]"
 
+// PalServer.exe is a launcher whose children inherit the log pipes; WaitDelay
+// lets cmd.Wait return once the tracked process exits even if a descendant
+// still holds the pipes open.
+const serverWaitDelay = 5 * time.Second
+
+const serverForceKillExitWait = 10 * time.Second
+
 func (a *App) handleServerInstall(w http.ResponseWriter, r *http.Request) {
 	if !requireNoRequestBody(w, r) {
 		return
@@ -367,7 +374,7 @@ func (a *App) startServerProcessAdmitted(settings settingsPayload) error {
 		a.serverMu.Unlock()
 		done <- err
 
-		if err != nil {
+		if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
 			a.appendServerLog(fmt.Sprintf("PalServer exited: %v", err))
 			return
 		}
@@ -407,35 +414,74 @@ func (a *App) stopServerProcess(timeout time.Duration) error {
 	}
 
 	a.appendServerLog("Stopping PalServer")
-	if runtime.GOOS == "windows" {
-		if err := cmd.Process.Kill(); err != nil {
-			return err
+	if a.requestGracefulServerStop(cmd) {
+		select {
+		case <-done:
+			return nil
+		case <-time.After(timeout):
+			a.appendServerLog("PalServer did not stop before timeout; killing process tree")
 		}
-	} else if err := cmd.Process.Signal(os.Interrupt); err != nil {
-		if killErr := cmd.Process.Kill(); killErr != nil {
-			return fmt.Errorf("signal failed: %v; kill failed: %w", err, killErr)
-		}
+	} else {
+		a.appendServerLog("Graceful stop unavailable; killing process tree")
+	}
+
+	if err := terminateServerProcessTree(cmd.Process); err != nil {
+		a.appendServerLog(fmt.Sprintf("Process tree termination failed (%v); killing direct process", err))
+		_ = cmd.Process.Kill()
 	}
 
 	select {
 	case <-done:
 		return nil
-	case <-time.After(timeout):
-		a.appendServerLog("PalServer did not stop before timeout; killing process")
-		if err := cmd.Process.Kill(); err != nil {
-			return err
+	case <-time.After(serverForceKillExitWait):
+		a.serverMu.Lock()
+		stillCurrent := a.serverCmd == cmd
+		a.serverMu.Unlock()
+		if !stillCurrent {
+			return nil
 		}
-		<-done
-		return nil
+		return errors.New("PalServer did not exit after force kill")
 	}
 }
 
+func (a *App) requestGracefulServerStop(cmd *exec.Cmd) bool {
+	if a.requestRESTShutdown() {
+		return true
+	}
+	return signalServerStop(cmd.Process)
+}
+
+func (a *App) requestRESTShutdown() bool {
+	settings, err := a.loadSettings()
+	if err != nil {
+		return false
+	}
+	if strings.TrimSpace(settings.RestAPIURL) == "" || strings.TrimSpace(settings.RestAPIPassword) == "" {
+		return false
+	}
+	client, err := a.newPalAPIClientFromSettings(settings)
+	if err != nil {
+		return false
+	}
+	if err := client.post("/shutdown", map[string]any{"waittime": 1, "message": "Server is stopping"}, nil); err != nil {
+		a.appendServerLog("REST shutdown request failed: " + err.Error())
+		return false
+	}
+	a.appendServerLog("Requested graceful shutdown via REST API")
+	return true
+}
+
 func buildServerCommand(binary string, args []string) *exec.Cmd {
+	var cmd *exec.Cmd
 	if runtime.GOOS != "windows" && strings.HasSuffix(binary, ".sh") {
 		shArgs := append([]string{binary}, args...)
-		return exec.Command("sh", shArgs...)
+		cmd = exec.Command("sh", shArgs...)
+	} else {
+		cmd = exec.Command(binary, args...)
 	}
-	return exec.Command(binary, args...)
+	cmd.SysProcAttr = serverSysProcAttr()
+	cmd.WaitDelay = serverWaitDelay
+	return cmd
 }
 
 func (a *App) isServerRunning() bool {
