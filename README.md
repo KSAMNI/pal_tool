@@ -21,6 +21,10 @@ ghcr.io/ksamni/palpanel-lite:latest
 
 ## 一键部署
 
+### 使用根目录 docker-compose.yml
+
+最简单的部署方式是在仓库根目录直接使用已经提供的 `docker-compose.yml`。这个文件默认会从 GHCR 拉取运行镜像，不需要你手动构建镜像。
+
 在服务器上准备部署目录：
 
 ```bash
@@ -34,7 +38,13 @@ cd /srv/palpanel
 git clone https://github.com/KSAMNI/pal_tool.git .
 ```
 
-如果只想部署运行，至少需要把项目里的这两个文件放到部署目录：
+确认当前目录里有根目录 Compose 文件：
+
+```bash
+ls -la docker-compose.yml .env.example
+```
+
+如果你不是通过 `git clone` 部署，而是只想复制最少文件运行，至少需要把项目根目录的这两个文件放到同一个部署目录：
 
 ```text
 docker-compose.yml
@@ -48,12 +58,30 @@ cp .env.example .env
 mkdir -p data PalServer
 ```
 
-启动面板：
+直接在这个目录执行 Docker Compose 命令即可。没有指定 `-f` 时，Docker Compose 会自动使用当前目录下的 `docker-compose.yml`：
 
 ```bash
 docker compose --env-file .env pull
 docker compose --env-file .env up -d
 ```
+
+这会启动 `palpanel` 服务，并挂载当前目录下的：
+
+```text
+./data
+./PalServer
+```
+
+根目录 `docker-compose.yml` 默认行为：
+
+- 拉取 `${PALPANEL_IMAGE}`，默认是 `ghcr.io/ksamni/palpanel-lite:latest`。
+- 将面板发布到宿主机 `127.0.0.1:${PALPANEL_PORT:-8080}`。
+- 将 Palworld 游戏 UDP 端口发布为 `${PALWORLD_GAME_HOST_PORT:-8211}:${PALWORLD_GAME_PORT:-8211}/udp`。
+- 将 `./data` 挂载到容器 `/data`。
+- 将 `./PalServer` 挂载到容器 `/palserver`。
+- 给新数据库默认写入 `pal_server_path=/palserver`。
+- 使用镜像内置的 SteamCMD，面板里的 `SteamCMD 路径` 可以留空。
+- 容器启动时会修复 `/data`、`/palserver`、`/data/steamcmd` 权限，然后以 `PALPANEL_UID`/`PALPANEL_GID` 运行面板。
 
 查看状态和日志：
 
