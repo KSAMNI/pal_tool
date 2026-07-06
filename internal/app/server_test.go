@@ -59,6 +59,7 @@ func TestServerControlRoutes(t *testing.T) {
 		{method: http.MethodPost, path: "/api/server/start", status: http.StatusBadRequest},
 		{method: http.MethodPost, path: "/api/server/restart", status: http.StatusPreconditionRequired},
 		{method: http.MethodPost, path: "/api/server/restart", status: http.StatusBadRequest, confirm: true},
+		{method: http.MethodPost, path: "/api/server/reset", status: http.StatusBadRequest},
 		{method: http.MethodPost, path: "/api/server/stop", status: http.StatusPreconditionRequired},
 		{method: http.MethodPost, path: "/api/server/stop", status: http.StatusConflict, confirm: true},
 	} {
@@ -67,6 +68,74 @@ func TestServerControlRoutes(t *testing.T) {
 			t.Fatalf("%s %s status = %d, want %d", tc.method, tc.path, resp.StatusCode, tc.status)
 		}
 		resp.Body.Close()
+	}
+}
+
+func TestServerResetKeepsConfigAndRemovesRuntimeContent(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+	server, client := newAuthenticatedTestServer(t, panel)
+
+	serverPath := t.TempDir()
+	writeFakePalServerBinary(t, serverPath)
+	configPath := filepath.Join(serverPath, "Pal", "Saved", "Config", "LinuxServer", "PalWorldSettings.ini")
+	worldPath := filepath.Join(serverPath, "Pal", "Saved", "SaveGames", "0", "world.sav")
+	logPath := filepath.Join(serverPath, "Pal", "Saved", "Logs", "server.log")
+	for _, path := range []string{configPath, worldPath, logPath} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("mkdir %s: %v", path, err)
+		}
+		if err := os.WriteFile(path, []byte(filepath.Base(path)), 0o644); err != nil {
+			t.Fatalf("write %s: %v", path, err)
+		}
+	}
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+	panel.serverProcessDetector = func(settings settingsPayload) (bool, error) { return false, nil }
+
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/server/reset", map[string]string{"password": "password123"})
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("reset status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if !fileExists(configPath) {
+		t.Fatalf("config file was removed: %s", configPath)
+	}
+	for _, path := range []string{worldPath, logPath} {
+		if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("runtime file %s stat err = %v, want not exist", path, err)
+		}
+	}
+}
+
+func TestServerResetRejectsWrongAdminPassword(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+	server, client := newAuthenticatedTestServer(t, panel)
+
+	serverPath := t.TempDir()
+	writeFakePalServerBinary(t, serverPath)
+	worldPath := filepath.Join(serverPath, "Pal", "Saved", "SaveGames", "world.sav")
+	if err := os.MkdirAll(filepath.Dir(worldPath), 0o755); err != nil {
+		t.Fatalf("mkdir world path: %v", err)
+	}
+	if err := os.WriteFile(worldPath, []byte("world"), 0o644); err != nil {
+		t.Fatalf("write world: %v", err)
+	}
+	setTestAppSetting(t, panel, "pal_server_path", serverPath)
+
+	resp := doJSON(t, client, http.MethodPost, server.URL+"/api/server/reset", map[string]string{"password": "wrong-password"})
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("reset status = %d, want %d", resp.StatusCode, http.StatusUnauthorized)
+	}
+	if !fileExists(worldPath) {
+		t.Fatal("runtime content was removed after wrong password")
 	}
 }
 
@@ -1180,6 +1249,32 @@ func TestAppendServerLogTruncatesLongEntries(t *testing.T) {
 	}
 	if !strings.HasPrefix(logs[0].Message, strings.Repeat("a", 10)) {
 		t.Fatalf("server log did not retain prefix: %q", logs[0].Message)
+	}
+}
+
+func TestAppendServerLogMovesRESTAccessLogsToConsole(t *testing.T) {
+	panel, err := New(t.TempDir())
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	defer panel.Close()
+
+	var console bytes.Buffer
+	previous := serverConsoleLogWriter
+	serverConsoleLogWriter = &console
+	t.Cleanup(func() {
+		serverConsoleLogWriter = previous
+	})
+
+	restLog := `[2026-07-07 01:23:54] [LOG] REST accessed endpoint /v1/api/players OK`
+	panel.appendServerLog("normal server line\n" + restLog)
+
+	logs := panel.recentServerLogs(0)
+	if len(logs) != 1 || logs[0].Message != "normal server line" {
+		t.Fatalf("server logs = %#v, want only normal line", logs)
+	}
+	if !strings.Contains(console.String(), restLog) {
+		t.Fatalf("console output %q does not contain REST log %q", console.String(), restLog)
 	}
 }
 

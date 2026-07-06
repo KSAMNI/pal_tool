@@ -547,6 +547,20 @@ body {
   width: min(860px, calc(100vw - 32px));
 }
 
+.danger-modal {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.modal-alert {
+  margin-bottom: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .modal-log {
   height: min(520px, 70vh);
 }

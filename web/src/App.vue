@@ -139,6 +139,16 @@
                   </template>
                   停止服务器可能中断在线玩家，请确认已经保存或备份。
                 </n-popconfirm>
+                <n-button
+                  secondary
+                  type="error"
+                  :loading="actionBusy === 'reset'"
+                  :disabled="serverActionBlocked('reset')"
+                  @click="openServerResetModal"
+                >
+                  <template #icon><RotateCcw :size="16" /></template>
+                  重置
+                </n-button>
               </n-space>
             </n-card>
 
@@ -888,6 +898,30 @@
           <pre class="log-box modal-log">{{ selectedMod?.info_json }}</pre>
         </n-card>
       </n-modal>
+      <n-modal v-model:show="serverResetModalVisible">
+        <n-card class="danger-modal" title="重置服务器内容">
+          <n-alert type="warning" class="modal-alert">
+            将删除当前 PalServer 的存档、日志等运行内容，但保留 Pal/Saved/Config 下的服务器配置。执行前会尽量创建保护备份。
+          </n-alert>
+          <n-form label-placement="top" @submit.prevent="submitServerReset">
+            <n-form-item label="管理员密码">
+              <n-input
+                v-model:value="serverResetPassword"
+                type="password"
+                autocomplete="current-password"
+                show-password-on="click"
+                placeholder="输入面板管理员密码"
+              />
+            </n-form-item>
+            <div class="modal-actions">
+              <n-button @click="closeServerResetModal">取消</n-button>
+              <n-button type="error" :loading="actionBusy === 'reset'" :disabled="serverResetPassword.length < 8" @click="submitServerReset">
+                确认重置
+              </n-button>
+            </div>
+          </n-form>
+        </n-card>
+      </n-modal>
     </n-message-provider>
   </n-config-provider>
 </template>
@@ -917,6 +951,8 @@ const shutdownMessage = ref('')
 const shutdownWaitSeconds = ref(30)
 const unbanUserID = ref('')
 const actionBusy = ref<ServerAction | null>(null)
+const serverResetModalVisible = ref(false)
+const serverResetPassword = ref('')
 const setupStepBusy = ref('')
 const config = ref<PalConfigPayload | null>(null)
 const configBusy = ref(false)
@@ -970,7 +1006,7 @@ let realtimeSocket: WebSocket | undefined
 let reconnectTimer: number | undefined
 let lastPalDashboardRefreshAt = 0
 
-type ServerAction = 'install' | 'update' | 'start' | 'stop' | 'restart'
+type ServerAction = 'install' | 'update' | 'start' | 'stop' | 'restart' | 'reset'
 const confirmedServerActions = new Set<ServerAction>(['update', 'stop', 'restart'])
 const configNotInitializedMessage = '配置文件尚未初始化。点击初始化后，面板会从默认配置创建 PalWorldSettings.ini。'
 type SetupStepAction = 'save-settings' | 'install' | 'init-config' | 'create-backup' | 'refresh-rest'
@@ -990,7 +1026,8 @@ const actionLabels: Record<ServerAction, string> = {
   update: '更新任务已启动',
   start: '服务器已启动',
   stop: '服务器已停止',
-  restart: '服务器已重启'
+  restart: '服务器已重启',
+  reset: '服务器内容已重置'
 }
 const performanceLaunchFlags = ['-useperfthreads', '-NoAsyncLoadingThread', '-UseMultithreadForDS']
 const maxSchedules = 20
@@ -1868,8 +1905,17 @@ function serverActionBlockReason(action: ServerAction): string {
   if (actionBusy.value !== null) return '已有服务器操作正在执行，请稍后再试。'
   if (activeTask.value) return '后台操作正在运行，请等待操作完成后再执行服务器操作。'
 
-  if ((action === 'install' || action === 'update' || action === 'restart') && status.value?.external_running) {
+  if ((action === 'install' || action === 'update' || action === 'restart' || action === 'reset') && status.value?.external_running) {
     return '检测到 PalServer 由面板外部运行，请先在外部停止后再执行服务器操作。'
+  }
+  if (action === 'reset' && status.value?.managed_running) {
+    return 'PalServer 正在由面板运行，请先停止服务器再重置内容。'
+  }
+  if (action === 'reset' && !status.value?.configured) {
+    return '请先保存 PalServer 安装目录后再重置服务器内容。'
+  }
+  if (action === 'reset' && !status.value?.pal_server_exists) {
+    return '未检测到 PalServer，请先安装或配置正确的 PalServer 目录。'
   }
   if ((action === 'start' || action === 'restart') && !status.value?.pal_server_exists) {
     return '未检测到 PalServer，请先安装或配置正确的 PalServer 目录。'
@@ -1881,6 +1927,46 @@ function serverActionBlockReason(action: ServerAction): string {
     return '没有由面板托管运行的 PalServer 可停止。'
   }
   return ''
+}
+
+function openServerResetModal() {
+  const blockReason = serverActionBlockReason('reset')
+  if (blockReason) {
+    message.warning(blockReason)
+    return
+  }
+  serverResetPassword.value = ''
+  serverResetModalVisible.value = true
+}
+
+function closeServerResetModal() {
+  if (actionBusy.value === 'reset') return
+  serverResetModalVisible.value = false
+  serverResetPassword.value = ''
+}
+
+async function submitServerReset() {
+  const blockReason = serverActionBlockReason('reset')
+  if (blockReason) {
+    message.warning(blockReason)
+    return
+  }
+  if (serverResetPassword.value.length < 8) {
+    message.warning('请输入管理员密码')
+    return
+  }
+  actionBusy.value = 'reset'
+  try {
+    await apiPost('/api/server/reset', { password: serverResetPassword.value })
+    serverResetModalVisible.value = false
+    serverResetPassword.value = ''
+    await Promise.all([loadDashboard(), loadBackups()])
+    message.success(actionLabels.reset)
+  } catch (err) {
+    message.error((err as Error).message)
+  } finally {
+    actionBusy.value = null
+  }
 }
 
 async function runServerAction(action: ServerAction) {

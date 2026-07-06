@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -74,6 +75,10 @@ type settingsPayload struct {
 
 type authPayload struct {
 	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type passwordPayload struct {
 	Password string `json:"password"`
 }
 
@@ -216,6 +221,7 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("POST /api/server/start", a.withAuth(a.handleServerStart))
 	mux.HandleFunc("POST /api/server/stop", a.withAuth(a.handleServerStop))
 	mux.HandleFunc("POST /api/server/restart", a.withAuth(a.handleServerRestart))
+	mux.HandleFunc("POST /api/server/reset", a.withAuth(a.handleServerReset))
 	mux.HandleFunc("POST /api/server/announce", a.withAuth(a.handleServerAnnounce))
 	mux.HandleFunc("POST /api/server/save", a.withAuth(a.handleServerSave))
 	mux.HandleFunc("GET /api/server/rest-settings", a.withAuth(a.handleServerRestSettings))
@@ -432,6 +438,21 @@ func (a *App) handleMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"username": username})
+}
+
+func (a *App) verifyCurrentUserPassword(r *http.Request, password string) error {
+	userID, ok := r.Context().Value(userIDKey{}).(int64)
+	if !ok || userID == 0 {
+		return errors.New("authentication required")
+	}
+	var hash string
+	if err := a.db.QueryRow(`SELECT password_hash FROM users WHERE id = ?`, userID).Scan(&hash); err != nil {
+		return fmt.Errorf("load current user: %w", err)
+	}
+	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
+		return errors.New("invalid admin password")
+	}
+	return nil
 }
 
 func (a *App) handleGetSettings(w http.ResponseWriter, r *http.Request) {

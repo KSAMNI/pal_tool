@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -26,6 +27,8 @@ var maxTaskLogBytes = 1 << 20
 var maxServerLogMessageBytes = 8 << 10
 
 var maxFinishedTaskRecords = 200
+
+var serverConsoleLogWriter io.Writer = os.Stdout
 
 const taskLogTruncatedMarker = "[... earlier task log truncated ...]\n"
 const serverLogTruncatedSuffix = " [... truncated]"
@@ -131,6 +134,110 @@ func (a *App) handleServerRestart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, a.currentServerStatus(settings))
+}
+
+func (a *App) handleServerReset(w http.ResponseWriter, r *http.Request) {
+	var payload passwordPayload
+	if !decodeJSON(w, r, &payload) {
+		return
+	}
+	if err := a.verifyCurrentUserPassword(r, payload.Password); err != nil {
+		writeError(w, http.StatusUnauthorized, err)
+		return
+	}
+	settings, err := a.loadSettings()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	err = a.runOperationTask("server_reset", "Resetting PalServer content while preserving config", "Server reset completed", func(taskID int64) error {
+		return a.resetServerContentKeepingConfig(taskID, settings)
+	})
+	if err != nil {
+		writeError(w, actionErrorStatus(err), err)
+		return
+	}
+	writeJSON(w, http.StatusOK, a.currentServerStatus(settings))
+}
+
+func (a *App) resetServerContentKeepingConfig(taskID int64, settings settingsPayload) error {
+	serverPath := strings.TrimSpace(settings.PalServerPath)
+	if serverPath == "" {
+		return errors.New("pal_server_path is required before resetting the server")
+	}
+	base, err := filepath.Abs(serverPath)
+	if err != nil {
+		return err
+	}
+	if info, err := os.Stat(base); err != nil || !info.IsDir() {
+		return fmt.Errorf("pal_server_path is not a directory: %s", serverPath)
+	}
+	if a.isManagedServerRunning() {
+		return errServerAlreadyRunning
+	}
+	if err := a.ensureNoExternalServerRunning(settings); err != nil {
+		return err
+	}
+	backup, err := a.createBackupIfPossibleWithSettings(settings, "pre_reset", "Before resetting server content")
+	if err != nil {
+		return fmt.Errorf("create pre-reset backup: %w", err)
+	}
+	if backup != nil {
+		a.logTaskf(taskID, "Pre-reset backup created: %s (%d bytes)", backup.Filename, backup.Size)
+	} else {
+		a.logTaskf(taskID, "No reset backup sources found; continuing")
+	}
+	savedPath := filepath.Join(base, "Pal", "Saved")
+	if err := ensurePathInsideBase(base, savedPath); err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(savedPath)
+	if errors.Is(err, os.ErrNotExist) {
+		a.logTaskf(taskID, "Pal/Saved does not exist; nothing to reset")
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	removed := 0
+	for _, entry := range entries {
+		if strings.EqualFold(entry.Name(), "Config") {
+			a.logTaskf(taskID, "Preserved Pal/Saved/Config")
+			continue
+		}
+		target := filepath.Join(savedPath, entry.Name())
+		if err := ensurePathInsideBase(savedPath, target); err != nil {
+			return err
+		}
+		if err := os.RemoveAll(target); err != nil {
+			return err
+		}
+		removed++
+		a.logTaskf(taskID, "Removed Pal/Saved/%s", entry.Name())
+	}
+	if removed == 0 {
+		a.logTaskf(taskID, "No resettable content found under Pal/Saved")
+	}
+	return nil
+}
+
+func ensurePathInsideBase(base, target string) error {
+	baseAbs, err := filepath.Abs(base)
+	if err != nil {
+		return err
+	}
+	targetAbs, err := filepath.Abs(target)
+	if err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(baseAbs, targetAbs)
+	if err != nil {
+		return err
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return fmt.Errorf("refusing to operate outside %s: %s", baseAbs, targetAbs)
+	}
+	return nil
 }
 
 func (a *App) handleServerLogs(w http.ResponseWriter, r *http.Request) {
@@ -517,9 +624,13 @@ func (a *App) appendServerLog(message string) {
 	if len(lines) == 0 {
 		return
 	}
-	now := time.Now().UTC().Format(time.RFC3339)
+	now := time.Now().Format(time.RFC3339)
 	entries := make([]serverLogEntry, 0, len(lines))
 	for _, line := range lines {
+		if isRESTAccessServerLog(line) {
+			_, _ = fmt.Fprintln(serverConsoleLogWriter, line)
+			continue
+		}
 		line = truncateServerLogMessage(line)
 		if line == "" {
 			continue
@@ -542,6 +653,10 @@ func (a *App) appendServerLog(message string) {
 	a.serverMu.Unlock()
 
 	a.broadcastRuntimeEvent(runtimeEvent{Type: "server_log", ServerLogs: entries, Running: &running})
+}
+
+func isRESTAccessServerLog(line string) bool {
+	return strings.Contains(line, "[LOG] REST accessed endpoint ")
 }
 
 func (a *App) createTask(taskType string) (int64, error) {
@@ -677,7 +792,7 @@ func (a *App) appendTaskLogOnce(taskID int64, text string) error {
 
 func (a *App) logTaskf(taskID int64, format string, args ...any) {
 	line := fmt.Sprintf(format, args...)
-	_ = a.appendTaskLog(taskID, fmt.Sprintf("[%s] %s\n", time.Now().UTC().Format(time.RFC3339), line))
+	_ = a.appendTaskLog(taskID, fmt.Sprintf("[%s] %s\n", time.Now().Format(time.RFC3339), line))
 }
 
 func (a *App) reserveTaskSlot() (func(), error) {
