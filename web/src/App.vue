@@ -619,7 +619,10 @@
                             <template #trigger>
                               <Info :size="14" class="config-field-info" />
                             </template>
-                            {{ field.description }}
+                            <div class="config-field-tooltip">
+                              <div>{{ field.description }}</div>
+                              <div class="config-field-raw-key">原始字段：{{ field.raw_key }}</div>
+                            </div>
                           </n-tooltip>
                         </span>
                       </template>

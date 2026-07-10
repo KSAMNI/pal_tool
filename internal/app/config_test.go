@@ -181,6 +181,18 @@ func TestPalConfigCurrentDefaultFieldsRoundTrip(t *testing.T) {
 	if doc.Values.RandomizerType != "None" {
 		t.Fatalf("RandomizerType = %q, want None", doc.Values.RandomizerType)
 	}
+	if doc.Values.DeathPenalty != "Item" {
+		t.Fatalf("DeathPenalty = %q, want Item", doc.Values.DeathPenalty)
+	}
+	if doc.Values.PhysicsActiveDropItemMaxNum != -1 {
+		t.Fatalf("PhysicsActiveDropItemMaxNum = %d, want -1", doc.Values.PhysicsActiveDropItemMaxNum)
+	}
+	if doc.Values.EggDefaultHatchingTime != 1 {
+		t.Fatalf("EggDefaultHatchingTime = %f, want 1", doc.Values.EggDefaultHatchingTime)
+	}
+	if doc.Values.IsStartLocationSelectByMap {
+		t.Fatalf("IsStartLocationSelectByMap = true, want false")
+	}
 	if !doc.Values.EnableFastTravel {
 		t.Fatalf("EnableFastTravel = false, want true")
 	}
@@ -201,6 +213,13 @@ func TestPalConfigCurrentDefaultFieldsRoundTrip(t *testing.T) {
 	nextValues.EnableFastTravel = false
 	nextValues.EggDefaultHatchingTime = 12
 	nextValues.DenyTechnologyList = `("PALBOX","RepairBench")`
+	nextValues.PlayerDataPalStorageUpdateCheckTickInterval = 2.5
+	nextValues.MonsterFarmActionSpeedRate = 1.5
+	nextValues.AutoTransferMasterThresholdDays = 30
+	nextValues.EnableVoiceChat = true
+	nextValues.VoiceChatMaxVolumeDistance = 4500
+	nextValues.EnableBuildingPlayerUIDDisplay = true
+	nextValues.BuildingNameDisplayCacheTTLSeconds = 120
 	nextValues.AdditionalDropItemWhenPlayerKillingInPvPEnabled = true
 	nextValues.AllowEnhanceStatAttack = false
 
@@ -214,6 +233,13 @@ func TestPalConfigCurrentDefaultFieldsRoundTrip(t *testing.T) {
 		`bEnableFastTravel=False`,
 		`PalEggDefaultHatchingTime=12.000000`,
 		`DenyTechnologyList=("PALBOX","RepairBench")`,
+		`PlayerDataPalStorageUpdateCheckTickInterval=2.500000`,
+		`MonsterFarmActionSpeedRate=1.500000`,
+		`AutoTransferMasterThresholdDays=30`,
+		`bEnableVoiceChat=True`,
+		`VoiceChatMaxVolumeDistance=4500.000000`,
+		`bEnableBuildingPlayerUIdDisplay=True`,
+		`BuildingNameDisplayCacheTTLSeconds=120`,
 		`bAdditionalDropItemWhenPlayerKillingInPvPMode=True`,
 		`bAllowEnhanceStat_Attack=False`,
 	} {
@@ -223,6 +249,38 @@ func TestPalConfigCurrentDefaultFieldsRoundTrip(t *testing.T) {
 	}
 	if strings.Contains(rendered, "(EggDefaultHatchingTime=") || strings.Contains(rendered, ",EggDefaultHatchingTime=") {
 		t.Fatalf("rendered config kept legacy EggDefaultHatchingTime key: %s", rendered)
+	}
+}
+
+func TestNewPalConfigFieldsHaveChineseMetadata(t *testing.T) {
+	want := map[string]string{
+		"PhysicsActiveDropItemMaxNum":                 "启用物理的掉落物上限",
+		"PlayerDataPalStorageUpdateCheckTickInterval": "帕鲁仓库更新检查间隔",
+		"MonsterFarmActionSpeedRate":                  "牧场帕鲁行动速度",
+		"AutoTransferMasterCheckIntervalSeconds":      "会长自动转让检查间隔",
+		"AutoTransferMasterThresholdDays":             "会长自动转让阈值",
+		"MaxGuildsPerFrame":                           "每帧处理公会数",
+		"bEnableVoiceChat":                            "启用语音聊天",
+		"VoiceChatMaxVolumeDistance":                  "语音最大音量距离",
+		"VoiceChatZeroVolumeDistance":                 "语音静音距离",
+		"bEnableBuildingPlayerUIdDisplay":             "显示建筑建造者 UID",
+		"BuildingNameDisplayCacheTTLSeconds":          "建筑名称缓存时间",
+	}
+	for _, field := range configFieldDefs() {
+		label, ok := want[field.RawKey]
+		if !ok {
+			continue
+		}
+		if field.Label != label {
+			t.Fatalf("field %s label = %q, want %q", field.RawKey, field.Label, label)
+		}
+		if field.Description == "" {
+			t.Fatalf("field %s is missing a Chinese description", field.RawKey)
+		}
+		delete(want, field.RawKey)
+	}
+	if len(want) != 0 {
+		t.Fatalf("new fields missing metadata: %v", want)
 	}
 }
 

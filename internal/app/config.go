@@ -17,7 +17,7 @@ const defaultPalWorldSettings = `; This configuration file is a sample of the de
 ; Changes to this file will NOT be reflected on the server.
 ; To change the server settings, modify Pal/Saved/Config/LinuxServer/PalWorldSettings.ini.
 [/Script/Pal.PalGameWorldSettings]
-OptionSettings=(Difficulty=None,RandomizerType=None,RandomizerSeed="",bIsRandomizerPalLevelRandom=False,DayTimeSpeedRate=1.000000,NightTimeSpeedRate=1.000000,ExpRate=1.000000,PalCaptureRate=1.000000,PalSpawnNumRate=1.000000,PalDamageRateAttack=1.000000,PalDamageRateDefense=1.000000,PlayerDamageRateAttack=1.000000,PlayerDamageRateDefense=1.000000,PlayerStomachDecreaceRate=1.000000,PlayerStaminaDecreaceRate=1.000000,PlayerAutoHPRegeneRate=1.000000,PlayerAutoHpRegeneRateInSleep=1.000000,PalStomachDecreaceRate=1.000000,PalStaminaDecreaceRate=1.000000,PalAutoHPRegeneRate=1.000000,PalAutoHpRegeneRateInSleep=1.000000,BuildObjectHpRate=1.000000,BuildObjectDamageRate=1.000000,BuildObjectDeteriorationDamageRate=1.000000,CollectionDropRate=1.000000,CollectionObjectHpRate=1.000000,CollectionObjectRespawnSpeedRate=1.000000,EnemyDropItemRate=1.000000,DeathPenalty=All,bEnablePlayerToPlayerDamage=False,bEnableFriendlyFire=False,bEnableInvaderEnemy=True,bActiveUNKO=False,bEnableAimAssistPad=True,bEnableAimAssistKeyboard=False,DropItemMaxNum=3000,DropItemMaxNum_UNKO=100,BaseCampMaxNum=128,BaseCampWorkerMaxNum=15,DropItemAliveMaxHours=1.000000,bAutoResetGuildNoOnlinePlayers=False,AutoResetGuildTimeNoOnlinePlayers=72.000000,GuildPlayerMaxNum=20,BaseCampMaxNumInGuild=4,PalEggDefaultHatchingTime=72.000000,WorkSpeedRate=1.000000,AutoSaveSpan=30.000000,bIsMultiplay=False,bIsPvP=False,bHardcore=False,bPalLost=False,bCharacterRecreateInHardcore=False,bCanPickupOtherGuildDeathPenaltyDrop=False,bEnableNonLoginPenalty=True,bEnableFastTravel=True,bEnableFastTravelOnlyBaseCamp=False,bIsStartLocationSelectByMap=True,bExistPlayerAfterLogout=False,bEnableDefenseOtherGuildPlayer=False,bInvisibleOtherGuildBaseCampAreaFX=False,bBuildAreaLimit=False,ItemWeightRate=1.000000,CoopPlayerMaxNum=4,ServerPlayerMaxNum=32,ServerName="Default Palworld Server",ServerDescription="",AdminPassword="",ServerPassword="",bAllowClientMod=True,PublicPort=8211,PublicIP="",RCONEnabled=False,RCONPort=25575,Region="",bUseAuth=True,BanListURL="https://b.palworldgame.com/api/banlist.txt",RESTAPIEnabled=False,RESTAPIPort=8212,bShowPlayerList=False,ChatPostLimitPerMinute=30,CrossplayPlatforms=(Steam,Xbox,PS5,Mac),bIsUseBackupSaveData=True,LogFormatType=Text,bIsShowJoinLeftMessage=True,SupplyDropSpan=180,EnablePredatorBossPal=True,MaxBuildingLimitNum=0,ServerReplicatePawnCullDistance=15000.000000,bAllowGlobalPalboxExport=True,bAllowGlobalPalboxImport=False,EquipmentDurabilityDamageRate=1.000000,ItemContainerForceMarkDirtyInterval=1.000000,ItemCorruptionMultiplier=1.000000,DenyTechnologyList=,GuildRejoinCooldownMinutes=0,BlockRespawnTime=5.000000,RespawnPenaltyDurationThreshold=0.000000,RespawnPenaltyTimeScale=2.000000,bDisplayPvPItemNumOnWorldMap_BaseCamp=False,bDisplayPvPItemNumOnWorldMap_Player=False,AdditionalDropItemWhenPlayerKillingInPvPMode="PlayerDropItem",AdditionalDropItemNumWhenPlayerKillingInPvPMode=1,bAdditionalDropItemWhenPlayerKillingInPvPMode=False,bAllowEnhanceStat_Health=True,bAllowEnhanceStat_Attack=True,bAllowEnhanceStat_Stamina=True,bAllowEnhanceStat_Weight=True,bAllowEnhanceStat_WorkSpeed=True)
+OptionSettings=(Difficulty=None,RandomizerType=None,RandomizerSeed="",bIsRandomizerPalLevelRandom=False,DayTimeSpeedRate=1.000000,NightTimeSpeedRate=1.000000,ExpRate=1.000000,PalCaptureRate=1.000000,PalSpawnNumRate=1.000000,PalDamageRateAttack=1.000000,PalDamageRateDefense=1.000000,PlayerDamageRateAttack=1.000000,PlayerDamageRateDefense=1.000000,PlayerStomachDecreaceRate=1.000000,PlayerStaminaDecreaceRate=1.000000,PlayerAutoHPRegeneRate=1.000000,PlayerAutoHpRegeneRateInSleep=1.000000,PalStomachDecreaceRate=1.000000,PalStaminaDecreaceRate=1.000000,PalAutoHPRegeneRate=1.000000,PalAutoHpRegeneRateInSleep=1.000000,BuildObjectHpRate=1.000000,BuildObjectDamageRate=1.000000,BuildObjectDeteriorationDamageRate=1.000000,CollectionDropRate=1.000000,CollectionObjectHpRate=1.000000,CollectionObjectRespawnSpeedRate=1.000000,EnemyDropItemRate=1.000000,DeathPenalty=Item,bEnablePlayerToPlayerDamage=False,bEnableFriendlyFire=False,bEnableInvaderEnemy=True,bActiveUNKO=False,bEnableAimAssistPad=True,bEnableAimAssistKeyboard=False,DropItemMaxNum=3000,PhysicsActiveDropItemMaxNum=-1,DropItemMaxNum_UNKO=100,BaseCampMaxNum=128,BaseCampWorkerMaxNum=15,DropItemAliveMaxHours=1.000000,bAutoResetGuildNoOnlinePlayers=False,AutoResetGuildTimeNoOnlinePlayers=72.000000,GuildPlayerMaxNum=20,BaseCampMaxNumInGuild=4,PalEggDefaultHatchingTime=1.000000,WorkSpeedRate=1.000000,AutoSaveSpan=30.000000,bIsMultiplay=False,bIsPvP=False,bHardcore=False,bPalLost=False,bCharacterRecreateInHardcore=False,bCanPickupOtherGuildDeathPenaltyDrop=False,bEnableNonLoginPenalty=True,bEnableFastTravel=True,bEnableFastTravelOnlyBaseCamp=False,bIsStartLocationSelectByMap=False,bExistPlayerAfterLogout=False,bEnableDefenseOtherGuildPlayer=False,bInvisibleOtherGuildBaseCampAreaFX=False,bBuildAreaLimit=False,ItemWeightRate=1.000000,CoopPlayerMaxNum=4,ServerPlayerMaxNum=32,ServerName="Default Palworld Server",ServerDescription="",AdminPassword="",ServerPassword="",bAllowClientMod=True,PublicPort=8211,PublicIP="",RCONEnabled=False,RCONPort=25575,Region="",bUseAuth=True,BanListURL="https://b.palworldgame.com/api/banlist.txt",RESTAPIEnabled=False,RESTAPIPort=8212,bShowPlayerList=False,ChatPostLimitPerMinute=30,CrossplayPlatforms=(Steam,Xbox,PS5,Mac),bIsUseBackupSaveData=True,LogFormatType=Text,bIsShowJoinLeftMessage=True,SupplyDropSpan=180,EnablePredatorBossPal=True,MaxBuildingLimitNum=0,ServerReplicatePawnCullDistance=15000.000000,bAllowGlobalPalboxExport=True,bAllowGlobalPalboxImport=False,EquipmentDurabilityDamageRate=1.000000,ItemContainerForceMarkDirtyInterval=1.000000,PlayerDataPalStorageUpdateCheckTickInterval=1.000000,ItemCorruptionMultiplier=1.000000,MonsterFarmActionSpeedRate=1.000000,DenyTechnologyList=,GuildRejoinCooldownMinutes=0,AutoTransferMasterCheckIntervalSeconds=3600.000000,AutoTransferMasterThresholdDays=14,MaxGuildsPerFrame=10,BlockRespawnTime=5.000000,RespawnPenaltyDurationThreshold=0.000000,RespawnPenaltyTimeScale=2.000000,bDisplayPvPItemNumOnWorldMap_BaseCamp=False,bDisplayPvPItemNumOnWorldMap_Player=False,AdditionalDropItemWhenPlayerKillingInPvPMode="PlayerDropItem",AdditionalDropItemNumWhenPlayerKillingInPvPMode=1,bAdditionalDropItemWhenPlayerKillingInPvPMode=False,bEnableVoiceChat=False,VoiceChatMaxVolumeDistance=3000.000000,VoiceChatZeroVolumeDistance=15000.000000,bAllowEnhanceStat_Health=True,bAllowEnhanceStat_Attack=True,bAllowEnhanceStat_Stamina=True,bAllowEnhanceStat_Weight=True,bAllowEnhanceStat_WorkSpeed=True,bEnableBuildingPlayerUIdDisplay=False,BuildingNameDisplayCacheTTLSeconds=60)
 `
 
 var errConfigNotInitialized = errors.New("PalWorldSettings.ini is not initialized; call POST /api/config/init")
@@ -74,6 +74,7 @@ type palConfigValues struct {
 	EnableAimAssistPad                              bool    `json:"enable_aim_assist_pad"`
 	EnableAimAssistKeyboard                         bool    `json:"enable_aim_assist_keyboard"`
 	DropItemMaxNum                                  int     `json:"drop_item_max_num"`
+	PhysicsActiveDropItemMaxNum                     int     `json:"physics_active_drop_item_max_num"`
 	DropItemMaxNumUNKO                              int     `json:"drop_item_max_num_unko"`
 	BaseCampMaxNum                                  int     `json:"base_camp_max_num"`
 	BaseCampWorkerMaxNum                            int     `json:"base_camp_worker_max_num"`
@@ -130,9 +131,14 @@ type palConfigValues struct {
 	AllowGlobalPalboxImport                         bool    `json:"allow_global_palbox_import"`
 	EquipmentDurabilityDamageRate                   float64 `json:"equipment_durability_damage_rate"`
 	ItemContainerForceMarkDirtyInterval             float64 `json:"item_container_force_mark_dirty_interval"`
+	PlayerDataPalStorageUpdateCheckTickInterval     float64 `json:"player_data_pal_storage_update_check_tick_interval"`
 	ItemCorruptionMultiplier                        float64 `json:"item_corruption_multiplier"`
+	MonsterFarmActionSpeedRate                      float64 `json:"monster_farm_action_speed_rate"`
 	DenyTechnologyList                              string  `json:"deny_technology_list"`
 	GuildRejoinCooldownMinutes                      int     `json:"guild_rejoin_cooldown_minutes"`
+	AutoTransferMasterCheckIntervalSeconds          float64 `json:"auto_transfer_master_check_interval_seconds"`
+	AutoTransferMasterThresholdDays                 int     `json:"auto_transfer_master_threshold_days"`
+	MaxGuildsPerFrame                               int     `json:"max_guilds_per_frame"`
 	BlockRespawnTime                                float64 `json:"block_respawn_time"`
 	RespawnPenaltyDurationThreshold                 float64 `json:"respawn_penalty_duration_threshold"`
 	RespawnPenaltyTimeScale                         float64 `json:"respawn_penalty_time_scale"`
@@ -141,11 +147,16 @@ type palConfigValues struct {
 	AdditionalDropItemWhenPlayerKillingInPvPMode    string  `json:"additional_drop_item_when_player_killing_in_pvp_mode"`
 	AdditionalDropItemNumWhenPlayerKillingInPvPMode int     `json:"additional_drop_item_num_when_player_killing_in_pvp_mode"`
 	AdditionalDropItemWhenPlayerKillingInPvPEnabled bool    `json:"additional_drop_item_when_player_killing_in_pvp_enabled"`
+	EnableVoiceChat                                 bool    `json:"enable_voice_chat"`
+	VoiceChatMaxVolumeDistance                      float64 `json:"voice_chat_max_volume_distance"`
+	VoiceChatZeroVolumeDistance                     float64 `json:"voice_chat_zero_volume_distance"`
 	AllowEnhanceStatHealth                          bool    `json:"allow_enhance_stat_health"`
 	AllowEnhanceStatAttack                          bool    `json:"allow_enhance_stat_attack"`
 	AllowEnhanceStatStamina                         bool    `json:"allow_enhance_stat_stamina"`
 	AllowEnhanceStatWeight                          bool    `json:"allow_enhance_stat_weight"`
 	AllowEnhanceStatWorkSpeed                       bool    `json:"allow_enhance_stat_work_speed"`
+	EnableBuildingPlayerUIDDisplay                  bool    `json:"enable_building_player_uid_display"`
+	BuildingNameDisplayCacheTTLSeconds              int     `json:"building_name_display_cache_ttl_seconds"`
 }
 
 type palConfigFieldOption struct {
@@ -578,114 +589,125 @@ func splitOptionParts(input string) []string {
 
 func valuesFromRaw(raw map[string]string) palConfigValues {
 	values := palConfigValues{
-		Difficulty:                                   readString(raw, "Difficulty", "None"),
-		RandomizerType:                               readString(raw, "RandomizerType", "None"),
-		RandomizerSeed:                               readString(raw, "RandomizerSeed", ""),
-		IsRandomizerPalLevelRandom:                   readBool(raw, "bIsRandomizerPalLevelRandom", false),
-		DayTimeSpeedRate:                             readFloat(raw, "DayTimeSpeedRate", 1),
-		NightTimeSpeedRate:                           readFloat(raw, "NightTimeSpeedRate", 1),
-		ExpRate:                                      readFloat(raw, "ExpRate", 1),
-		PalCaptureRate:                               readFloat(raw, "PalCaptureRate", 1),
-		PalSpawnNumRate:                              readFloat(raw, "PalSpawnNumRate", 1),
-		PalDamageRateAttack:                          readFloat(raw, "PalDamageRateAttack", 1),
-		PalDamageRateDefense:                         readFloat(raw, "PalDamageRateDefense", 1),
-		PlayerDamageRateAttack:                       readFloat(raw, "PlayerDamageRateAttack", 1),
-		PlayerDamageRateDefense:                      readFloat(raw, "PlayerDamageRateDefense", 1),
-		PlayerStomachDecreaseRate:                    readFloat(raw, "PlayerStomachDecreaceRate", 1),
-		PlayerStaminaDecreaseRate:                    readFloat(raw, "PlayerStaminaDecreaceRate", 1),
-		PlayerAutoHPRegenRate:                        readFloat(raw, "PlayerAutoHPRegeneRate", 1),
-		PlayerAutoHPRegenRateInSleep:                 readFloat(raw, "PlayerAutoHpRegeneRateInSleep", 1),
-		PalStomachDecreaseRate:                       readFloat(raw, "PalStomachDecreaceRate", 1),
-		PalStaminaDecreaseRate:                       readFloat(raw, "PalStaminaDecreaceRate", 1),
-		PalAutoHPRegenRate:                           readFloat(raw, "PalAutoHPRegeneRate", 1),
-		PalAutoHPRegenRateInSleep:                    readFloat(raw, "PalAutoHpRegeneRateInSleep", 1),
-		BuildObjectHpRate:                            readFloat(raw, "BuildObjectHpRate", 1),
-		BuildObjectDamageRate:                        readFloat(raw, "BuildObjectDamageRate", 1),
-		BuildObjectDeteriorationDamageRate:           readFloat(raw, "BuildObjectDeteriorationDamageRate", 1),
-		CollectionDropRate:                           readFloat(raw, "CollectionDropRate", 1),
-		CollectionObjectHpRate:                       readFloat(raw, "CollectionObjectHpRate", 1),
-		CollectionObjectRespawnSpeedRate:             readFloat(raw, "CollectionObjectRespawnSpeedRate", 1),
-		EnemyDropItemRate:                            readFloat(raw, "EnemyDropItemRate", 1),
-		DeathPenalty:                                 readString(raw, "DeathPenalty", "All"),
-		EnablePlayerToPlayerDamage:                   readBool(raw, "bEnablePlayerToPlayerDamage", false),
-		EnableFriendlyFire:                           readBool(raw, "bEnableFriendlyFire", false),
-		EnableInvaderEnemy:                           readBool(raw, "bEnableInvaderEnemy", true),
-		ActiveUNKO:                                   readBool(raw, "bActiveUNKO", false),
-		EnableAimAssistPad:                           readBool(raw, "bEnableAimAssistPad", true),
-		EnableAimAssistKeyboard:                      readBool(raw, "bEnableAimAssistKeyboard", false),
-		DropItemMaxNum:                               readInt(raw, "DropItemMaxNum", 3000),
-		DropItemMaxNumUNKO:                           readInt(raw, "DropItemMaxNum_UNKO", 100),
-		BaseCampMaxNum:                               readInt(raw, "BaseCampMaxNum", 128),
-		BaseCampWorkerMaxNum:                         readInt(raw, "BaseCampWorkerMaxNum", 15),
-		DropItemAliveMaxHours:                        readFloat(raw, "DropItemAliveMaxHours", 1),
-		AutoResetGuildNoOnlinePlayers:                readBool(raw, "bAutoResetGuildNoOnlinePlayers", false),
-		AutoResetGuildTimeNoOnlinePlayers:            readFloat(raw, "AutoResetGuildTimeNoOnlinePlayers", 72),
-		GuildPlayerMaxNum:                            readInt(raw, "GuildPlayerMaxNum", 20),
-		BaseCampMaxNumInGuild:                        readInt(raw, "BaseCampMaxNumInGuild", 4),
-		EggDefaultHatchingTime:                       readFloatWithFallback(raw, "PalEggDefaultHatchingTime", "EggDefaultHatchingTime", 72),
-		WorkSpeedRate:                                readFloat(raw, "WorkSpeedRate", 1),
-		AutoSaveSpan:                                 readFloat(raw, "AutoSaveSpan", 30),
-		IsMultiplay:                                  readBool(raw, "bIsMultiplay", false),
-		IsPvP:                                        readBool(raw, "bIsPvP", false),
-		Hardcore:                                     readBool(raw, "bHardcore", false),
-		PalLost:                                      readBool(raw, "bPalLost", false),
-		CharacterRecreateInHardcore:                  readBool(raw, "bCharacterRecreateInHardcore", false),
-		CanPickupOtherGuildDeathPenaltyDrop:          readBool(raw, "bCanPickupOtherGuildDeathPenaltyDrop", false),
-		EnableNonLoginPenalty:                        readBool(raw, "bEnableNonLoginPenalty", true),
-		EnableFastTravel:                             readBool(raw, "bEnableFastTravel", true),
-		EnableFastTravelOnlyBaseCamp:                 readBool(raw, "bEnableFastTravelOnlyBaseCamp", false),
-		IsStartLocationSelectByMap:                   readBool(raw, "bIsStartLocationSelectByMap", true),
-		ExistPlayerAfterLogout:                       readBool(raw, "bExistPlayerAfterLogout", false),
-		EnableDefenseOtherGuildPlayer:                readBool(raw, "bEnableDefenseOtherGuildPlayer", false),
-		InvisibleOtherGuildBaseCampAreaFX:            readBool(raw, "bInvisibleOtherGuildBaseCampAreaFX", false),
-		BuildAreaLimit:                               readBool(raw, "bBuildAreaLimit", false),
-		ItemWeightRate:                               readFloat(raw, "ItemWeightRate", 1),
-		CoopPlayerMaxNum:                             readInt(raw, "CoopPlayerMaxNum", 4),
-		ServerPlayerMaxNum:                           readInt(raw, "ServerPlayerMaxNum", 32),
-		ServerName:                                   readString(raw, "ServerName", "Default Palworld Server"),
-		ServerDescription:                            readString(raw, "ServerDescription", ""),
-		AdminPassword:                                readString(raw, "AdminPassword", ""),
-		ServerPassword:                               readString(raw, "ServerPassword", ""),
-		AllowClientMod:                               readBool(raw, "bAllowClientMod", true),
-		PublicPort:                                   readInt(raw, "PublicPort", 8211),
-		PublicIP:                                     readString(raw, "PublicIP", ""),
-		RCONEnabled:                                  readBool(raw, "RCONEnabled", false),
-		RCONPort:                                     readInt(raw, "RCONPort", 25575),
-		Region:                                       readString(raw, "Region", ""),
-		UseAuth:                                      readBool(raw, "bUseAuth", true),
-		BanListURL:                                   readString(raw, "BanListURL", "https://b.palworldgame.com/api/banlist.txt"),
-		RESTAPIEnabled:                               readBool(raw, "RESTAPIEnabled", false),
-		RESTAPIPort:                                  readInt(raw, "RESTAPIPort", 8212),
-		ShowPlayerList:                               readBool(raw, "bShowPlayerList", false),
-		ChatPostLimitPerMinute:                       readInt(raw, "ChatPostLimitPerMinute", 30),
-		CrossplayPlatforms:                           readString(raw, "CrossplayPlatforms", "(Steam,Xbox,PS5,Mac)"),
-		IsUseBackupSaveData:                          readBool(raw, "bIsUseBackupSaveData", true),
-		LogFormatType:                                readString(raw, "LogFormatType", "Text"),
-		IsShowJoinLeftMessage:                        readBool(raw, "bIsShowJoinLeftMessage", true),
-		SupplyDropSpan:                               readInt(raw, "SupplyDropSpan", 180),
-		EnablePredatorBossPal:                        readBool(raw, "EnablePredatorBossPal", true),
-		MaxBuildingLimitNum:                          readInt(raw, "MaxBuildingLimitNum", 0),
-		ServerReplicatePawnCullDistance:              readFloat(raw, "ServerReplicatePawnCullDistance", 15000),
-		AllowGlobalPalboxExport:                      readBool(raw, "bAllowGlobalPalboxExport", true),
-		AllowGlobalPalboxImport:                      readBool(raw, "bAllowGlobalPalboxImport", false),
-		EquipmentDurabilityDamageRate:                readFloat(raw, "EquipmentDurabilityDamageRate", 1),
-		ItemContainerForceMarkDirtyInterval:          readFloat(raw, "ItemContainerForceMarkDirtyInterval", 1),
-		ItemCorruptionMultiplier:                     readFloat(raw, "ItemCorruptionMultiplier", 1),
-		DenyTechnologyList:                           readString(raw, "DenyTechnologyList", ""),
-		GuildRejoinCooldownMinutes:                   readInt(raw, "GuildRejoinCooldownMinutes", 0),
-		BlockRespawnTime:                             readFloat(raw, "BlockRespawnTime", 5),
-		RespawnPenaltyDurationThreshold:              readFloat(raw, "RespawnPenaltyDurationThreshold", 0),
-		RespawnPenaltyTimeScale:                      readFloat(raw, "RespawnPenaltyTimeScale", 2),
-		DisplayPvPItemNumOnWorldMapBaseCamp:          readBool(raw, "bDisplayPvPItemNumOnWorldMap_BaseCamp", false),
-		DisplayPvPItemNumOnWorldMapPlayer:            readBool(raw, "bDisplayPvPItemNumOnWorldMap_Player", false),
-		AdditionalDropItemWhenPlayerKillingInPvPMode: readString(raw, "AdditionalDropItemWhenPlayerKillingInPvPMode", "PlayerDropItem"),
+		Difficulty:                          readString(raw, "Difficulty", "None"),
+		RandomizerType:                      readString(raw, "RandomizerType", "None"),
+		RandomizerSeed:                      readString(raw, "RandomizerSeed", ""),
+		IsRandomizerPalLevelRandom:          readBool(raw, "bIsRandomizerPalLevelRandom", false),
+		DayTimeSpeedRate:                    readFloat(raw, "DayTimeSpeedRate", 1),
+		NightTimeSpeedRate:                  readFloat(raw, "NightTimeSpeedRate", 1),
+		ExpRate:                             readFloat(raw, "ExpRate", 1),
+		PalCaptureRate:                      readFloat(raw, "PalCaptureRate", 1),
+		PalSpawnNumRate:                     readFloat(raw, "PalSpawnNumRate", 1),
+		PalDamageRateAttack:                 readFloat(raw, "PalDamageRateAttack", 1),
+		PalDamageRateDefense:                readFloat(raw, "PalDamageRateDefense", 1),
+		PlayerDamageRateAttack:              readFloat(raw, "PlayerDamageRateAttack", 1),
+		PlayerDamageRateDefense:             readFloat(raw, "PlayerDamageRateDefense", 1),
+		PlayerStomachDecreaseRate:           readFloat(raw, "PlayerStomachDecreaceRate", 1),
+		PlayerStaminaDecreaseRate:           readFloat(raw, "PlayerStaminaDecreaceRate", 1),
+		PlayerAutoHPRegenRate:               readFloat(raw, "PlayerAutoHPRegeneRate", 1),
+		PlayerAutoHPRegenRateInSleep:        readFloat(raw, "PlayerAutoHpRegeneRateInSleep", 1),
+		PalStomachDecreaseRate:              readFloat(raw, "PalStomachDecreaceRate", 1),
+		PalStaminaDecreaseRate:              readFloat(raw, "PalStaminaDecreaceRate", 1),
+		PalAutoHPRegenRate:                  readFloat(raw, "PalAutoHPRegeneRate", 1),
+		PalAutoHPRegenRateInSleep:           readFloat(raw, "PalAutoHpRegeneRateInSleep", 1),
+		BuildObjectHpRate:                   readFloat(raw, "BuildObjectHpRate", 1),
+		BuildObjectDamageRate:               readFloat(raw, "BuildObjectDamageRate", 1),
+		BuildObjectDeteriorationDamageRate:  readFloat(raw, "BuildObjectDeteriorationDamageRate", 1),
+		CollectionDropRate:                  readFloat(raw, "CollectionDropRate", 1),
+		CollectionObjectHpRate:              readFloat(raw, "CollectionObjectHpRate", 1),
+		CollectionObjectRespawnSpeedRate:    readFloat(raw, "CollectionObjectRespawnSpeedRate", 1),
+		EnemyDropItemRate:                   readFloat(raw, "EnemyDropItemRate", 1),
+		DeathPenalty:                        readString(raw, "DeathPenalty", "Item"),
+		EnablePlayerToPlayerDamage:          readBool(raw, "bEnablePlayerToPlayerDamage", false),
+		EnableFriendlyFire:                  readBool(raw, "bEnableFriendlyFire", false),
+		EnableInvaderEnemy:                  readBool(raw, "bEnableInvaderEnemy", true),
+		ActiveUNKO:                          readBool(raw, "bActiveUNKO", false),
+		EnableAimAssistPad:                  readBool(raw, "bEnableAimAssistPad", true),
+		EnableAimAssistKeyboard:             readBool(raw, "bEnableAimAssistKeyboard", false),
+		DropItemMaxNum:                      readInt(raw, "DropItemMaxNum", 3000),
+		PhysicsActiveDropItemMaxNum:         readInt(raw, "PhysicsActiveDropItemMaxNum", -1),
+		DropItemMaxNumUNKO:                  readInt(raw, "DropItemMaxNum_UNKO", 100),
+		BaseCampMaxNum:                      readInt(raw, "BaseCampMaxNum", 128),
+		BaseCampWorkerMaxNum:                readInt(raw, "BaseCampWorkerMaxNum", 15),
+		DropItemAliveMaxHours:               readFloat(raw, "DropItemAliveMaxHours", 1),
+		AutoResetGuildNoOnlinePlayers:       readBool(raw, "bAutoResetGuildNoOnlinePlayers", false),
+		AutoResetGuildTimeNoOnlinePlayers:   readFloat(raw, "AutoResetGuildTimeNoOnlinePlayers", 72),
+		GuildPlayerMaxNum:                   readInt(raw, "GuildPlayerMaxNum", 20),
+		BaseCampMaxNumInGuild:               readInt(raw, "BaseCampMaxNumInGuild", 4),
+		EggDefaultHatchingTime:              readFloatWithFallback(raw, "PalEggDefaultHatchingTime", "EggDefaultHatchingTime", 1),
+		WorkSpeedRate:                       readFloat(raw, "WorkSpeedRate", 1),
+		AutoSaveSpan:                        readFloat(raw, "AutoSaveSpan", 30),
+		IsMultiplay:                         readBool(raw, "bIsMultiplay", false),
+		IsPvP:                               readBool(raw, "bIsPvP", false),
+		Hardcore:                            readBool(raw, "bHardcore", false),
+		PalLost:                             readBool(raw, "bPalLost", false),
+		CharacterRecreateInHardcore:         readBool(raw, "bCharacterRecreateInHardcore", false),
+		CanPickupOtherGuildDeathPenaltyDrop: readBool(raw, "bCanPickupOtherGuildDeathPenaltyDrop", false),
+		EnableNonLoginPenalty:               readBool(raw, "bEnableNonLoginPenalty", true),
+		EnableFastTravel:                    readBool(raw, "bEnableFastTravel", true),
+		EnableFastTravelOnlyBaseCamp:        readBool(raw, "bEnableFastTravelOnlyBaseCamp", false),
+		IsStartLocationSelectByMap:          readBool(raw, "bIsStartLocationSelectByMap", false),
+		ExistPlayerAfterLogout:              readBool(raw, "bExistPlayerAfterLogout", false),
+		EnableDefenseOtherGuildPlayer:       readBool(raw, "bEnableDefenseOtherGuildPlayer", false),
+		InvisibleOtherGuildBaseCampAreaFX:   readBool(raw, "bInvisibleOtherGuildBaseCampAreaFX", false),
+		BuildAreaLimit:                      readBool(raw, "bBuildAreaLimit", false),
+		ItemWeightRate:                      readFloat(raw, "ItemWeightRate", 1),
+		CoopPlayerMaxNum:                    readInt(raw, "CoopPlayerMaxNum", 4),
+		ServerPlayerMaxNum:                  readInt(raw, "ServerPlayerMaxNum", 32),
+		ServerName:                          readString(raw, "ServerName", "Default Palworld Server"),
+		ServerDescription:                   readString(raw, "ServerDescription", ""),
+		AdminPassword:                       readString(raw, "AdminPassword", ""),
+		ServerPassword:                      readString(raw, "ServerPassword", ""),
+		AllowClientMod:                      readBool(raw, "bAllowClientMod", true),
+		PublicPort:                          readInt(raw, "PublicPort", 8211),
+		PublicIP:                            readString(raw, "PublicIP", ""),
+		RCONEnabled:                         readBool(raw, "RCONEnabled", false),
+		RCONPort:                            readInt(raw, "RCONPort", 25575),
+		Region:                              readString(raw, "Region", ""),
+		UseAuth:                             readBool(raw, "bUseAuth", true),
+		BanListURL:                          readString(raw, "BanListURL", "https://b.palworldgame.com/api/banlist.txt"),
+		RESTAPIEnabled:                      readBool(raw, "RESTAPIEnabled", false),
+		RESTAPIPort:                         readInt(raw, "RESTAPIPort", 8212),
+		ShowPlayerList:                      readBool(raw, "bShowPlayerList", false),
+		ChatPostLimitPerMinute:              readInt(raw, "ChatPostLimitPerMinute", 30),
+		CrossplayPlatforms:                  readString(raw, "CrossplayPlatforms", "(Steam,Xbox,PS5,Mac)"),
+		IsUseBackupSaveData:                 readBool(raw, "bIsUseBackupSaveData", true),
+		LogFormatType:                       readString(raw, "LogFormatType", "Text"),
+		IsShowJoinLeftMessage:               readBool(raw, "bIsShowJoinLeftMessage", true),
+		SupplyDropSpan:                      readInt(raw, "SupplyDropSpan", 180),
+		EnablePredatorBossPal:               readBool(raw, "EnablePredatorBossPal", true),
+		MaxBuildingLimitNum:                 readInt(raw, "MaxBuildingLimitNum", 0),
+		ServerReplicatePawnCullDistance:     readFloat(raw, "ServerReplicatePawnCullDistance", 15000),
+		AllowGlobalPalboxExport:             readBool(raw, "bAllowGlobalPalboxExport", true),
+		AllowGlobalPalboxImport:             readBool(raw, "bAllowGlobalPalboxImport", false),
+		EquipmentDurabilityDamageRate:       readFloat(raw, "EquipmentDurabilityDamageRate", 1),
+		ItemContainerForceMarkDirtyInterval: readFloat(raw, "ItemContainerForceMarkDirtyInterval", 1),
+		PlayerDataPalStorageUpdateCheckTickInterval:     readFloat(raw, "PlayerDataPalStorageUpdateCheckTickInterval", 1),
+		ItemCorruptionMultiplier:                        readFloat(raw, "ItemCorruptionMultiplier", 1),
+		MonsterFarmActionSpeedRate:                      readFloat(raw, "MonsterFarmActionSpeedRate", 1),
+		DenyTechnologyList:                              readString(raw, "DenyTechnologyList", ""),
+		GuildRejoinCooldownMinutes:                      readInt(raw, "GuildRejoinCooldownMinutes", 0),
+		AutoTransferMasterCheckIntervalSeconds:          readFloat(raw, "AutoTransferMasterCheckIntervalSeconds", 3600),
+		AutoTransferMasterThresholdDays:                 readInt(raw, "AutoTransferMasterThresholdDays", 14),
+		MaxGuildsPerFrame:                               readInt(raw, "MaxGuildsPerFrame", 10),
+		BlockRespawnTime:                                readFloat(raw, "BlockRespawnTime", 5),
+		RespawnPenaltyDurationThreshold:                 readFloat(raw, "RespawnPenaltyDurationThreshold", 0),
+		RespawnPenaltyTimeScale:                         readFloat(raw, "RespawnPenaltyTimeScale", 2),
+		DisplayPvPItemNumOnWorldMapBaseCamp:             readBool(raw, "bDisplayPvPItemNumOnWorldMap_BaseCamp", false),
+		DisplayPvPItemNumOnWorldMapPlayer:               readBool(raw, "bDisplayPvPItemNumOnWorldMap_Player", false),
+		AdditionalDropItemWhenPlayerKillingInPvPMode:    readString(raw, "AdditionalDropItemWhenPlayerKillingInPvPMode", "PlayerDropItem"),
 		AdditionalDropItemNumWhenPlayerKillingInPvPMode: readInt(raw, "AdditionalDropItemNumWhenPlayerKillingInPvPMode", 1),
 		AdditionalDropItemWhenPlayerKillingInPvPEnabled: readBool(raw, "bAdditionalDropItemWhenPlayerKillingInPvPMode", false),
+		EnableVoiceChat:                                 readBool(raw, "bEnableVoiceChat", false),
+		VoiceChatMaxVolumeDistance:                      readFloat(raw, "VoiceChatMaxVolumeDistance", 3000),
+		VoiceChatZeroVolumeDistance:                     readFloat(raw, "VoiceChatZeroVolumeDistance", 15000),
 		AllowEnhanceStatHealth:                          readBool(raw, "bAllowEnhanceStat_Health", true),
 		AllowEnhanceStatAttack:                          readBool(raw, "bAllowEnhanceStat_Attack", true),
 		AllowEnhanceStatStamina:                         readBool(raw, "bAllowEnhanceStat_Stamina", true),
 		AllowEnhanceStatWeight:                          readBool(raw, "bAllowEnhanceStat_Weight", true),
 		AllowEnhanceStatWorkSpeed:                       readBool(raw, "bAllowEnhanceStat_WorkSpeed", true),
+		EnableBuildingPlayerUIDDisplay:                  readBool(raw, "bEnableBuildingPlayerUIdDisplay", false),
+		BuildingNameDisplayCacheTTLSeconds:              readInt(raw, "BuildingNameDisplayCacheTTLSeconds", 60),
 	}
 	return values
 }
@@ -759,13 +781,18 @@ func (values *palConfigValues) applyDefaultsFrom(previous palConfigValues) {
 	positiveFloat(&values.EnemyDropItemRate, previous.EnemyDropItemRate, 1)
 	positiveFloat(&values.DropItemAliveMaxHours, previous.DropItemAliveMaxHours, 1)
 	nonNegativeFloat(&values.AutoResetGuildTimeNoOnlinePlayers, previous.AutoResetGuildTimeNoOnlinePlayers, 72)
-	nonNegativeFloat(&values.EggDefaultHatchingTime, previous.EggDefaultHatchingTime, 72)
+	nonNegativeFloat(&values.EggDefaultHatchingTime, previous.EggDefaultHatchingTime, 1)
 	positiveFloat(&values.WorkSpeedRate, previous.WorkSpeedRate, 1)
 	positiveFloat(&values.AutoSaveSpan, previous.AutoSaveSpan, 30)
 	positiveFloat(&values.ItemWeightRate, previous.ItemWeightRate, 1)
 	positiveFloat(&values.EquipmentDurabilityDamageRate, previous.EquipmentDurabilityDamageRate, 1)
 	positiveFloat(&values.ItemContainerForceMarkDirtyInterval, previous.ItemContainerForceMarkDirtyInterval, 1)
+	positiveFloat(&values.PlayerDataPalStorageUpdateCheckTickInterval, previous.PlayerDataPalStorageUpdateCheckTickInterval, 1)
 	nonNegativeFloat(&values.ItemCorruptionMultiplier, previous.ItemCorruptionMultiplier, 1)
+	positiveFloat(&values.MonsterFarmActionSpeedRate, previous.MonsterFarmActionSpeedRate, 1)
+	positiveFloat(&values.AutoTransferMasterCheckIntervalSeconds, previous.AutoTransferMasterCheckIntervalSeconds, 3600)
+	nonNegativeFloat(&values.VoiceChatMaxVolumeDistance, previous.VoiceChatMaxVolumeDistance, 3000)
+	nonNegativeFloat(&values.VoiceChatZeroVolumeDistance, previous.VoiceChatZeroVolumeDistance, 15000)
 	nonNegativeFloat(&values.BlockRespawnTime, previous.BlockRespawnTime, 5)
 	nonNegativeFloat(&values.RespawnPenaltyDurationThreshold, previous.RespawnPenaltyDurationThreshold, 0)
 	positiveFloat(&values.RespawnPenaltyTimeScale, previous.RespawnPenaltyTimeScale, 2)
@@ -788,6 +815,9 @@ func (values *palConfigValues) applyDefaultsFrom(previous palConfigValues) {
 	nonNegativeInt(&values.SupplyDropSpan, previous.SupplyDropSpan, 180)
 	nonNegativeInt(&values.MaxBuildingLimitNum, previous.MaxBuildingLimitNum, 0)
 	nonNegativeInt(&values.GuildRejoinCooldownMinutes, previous.GuildRejoinCooldownMinutes, 0)
+	nonNegativeInt(&values.AutoTransferMasterThresholdDays, previous.AutoTransferMasterThresholdDays, 14)
+	positiveInt(&values.MaxGuildsPerFrame, previous.MaxGuildsPerFrame, 10)
+	nonNegativeInt(&values.BuildingNameDisplayCacheTTLSeconds, previous.BuildingNameDisplayCacheTTLSeconds, 60)
 	nonNegativeInt(&values.AdditionalDropItemNumWhenPlayerKillingInPvPMode, previous.AdditionalDropItemNumWhenPlayerKillingInPvPMode, 1)
 	port(&values.PublicPort, previous.PublicPort, 8211)
 	port(&values.RCONPort, previous.RCONPort, 25575)
@@ -870,6 +900,7 @@ func (doc palConfigDocument) rawWithValues(values palConfigValues) map[string]st
 	raw["bEnableAimAssistPad"] = writeBool(values.EnableAimAssistPad)
 	raw["bEnableAimAssistKeyboard"] = writeBool(values.EnableAimAssistKeyboard)
 	raw["DropItemMaxNum"] = writeInt(values.DropItemMaxNum)
+	raw["PhysicsActiveDropItemMaxNum"] = writeInt(values.PhysicsActiveDropItemMaxNum)
 	raw["DropItemMaxNum_UNKO"] = writeInt(values.DropItemMaxNumUNKO)
 	raw["BaseCampMaxNum"] = writeInt(values.BaseCampMaxNum)
 	raw["BaseCampWorkerMaxNum"] = writeInt(values.BaseCampWorkerMaxNum)
@@ -927,9 +958,14 @@ func (doc palConfigDocument) rawWithValues(values palConfigValues) map[string]st
 	raw["bAllowGlobalPalboxImport"] = writeBool(values.AllowGlobalPalboxImport)
 	raw["EquipmentDurabilityDamageRate"] = writeFloat(values.EquipmentDurabilityDamageRate)
 	raw["ItemContainerForceMarkDirtyInterval"] = writeFloat(values.ItemContainerForceMarkDirtyInterval)
+	raw["PlayerDataPalStorageUpdateCheckTickInterval"] = writeFloat(values.PlayerDataPalStorageUpdateCheckTickInterval)
 	raw["ItemCorruptionMultiplier"] = writeFloat(values.ItemCorruptionMultiplier)
+	raw["MonsterFarmActionSpeedRate"] = writeFloat(values.MonsterFarmActionSpeedRate)
 	raw["DenyTechnologyList"] = writeRawOrString(values.DenyTechnologyList)
 	raw["GuildRejoinCooldownMinutes"] = writeInt(values.GuildRejoinCooldownMinutes)
+	raw["AutoTransferMasterCheckIntervalSeconds"] = writeFloat(values.AutoTransferMasterCheckIntervalSeconds)
+	raw["AutoTransferMasterThresholdDays"] = writeInt(values.AutoTransferMasterThresholdDays)
+	raw["MaxGuildsPerFrame"] = writeInt(values.MaxGuildsPerFrame)
 	raw["BlockRespawnTime"] = writeFloat(values.BlockRespawnTime)
 	raw["RespawnPenaltyDurationThreshold"] = writeFloat(values.RespawnPenaltyDurationThreshold)
 	raw["RespawnPenaltyTimeScale"] = writeFloat(values.RespawnPenaltyTimeScale)
@@ -938,11 +974,16 @@ func (doc palConfigDocument) rawWithValues(values palConfigValues) map[string]st
 	raw["AdditionalDropItemWhenPlayerKillingInPvPMode"] = writeString(values.AdditionalDropItemWhenPlayerKillingInPvPMode)
 	raw["AdditionalDropItemNumWhenPlayerKillingInPvPMode"] = writeInt(values.AdditionalDropItemNumWhenPlayerKillingInPvPMode)
 	raw["bAdditionalDropItemWhenPlayerKillingInPvPMode"] = writeBool(values.AdditionalDropItemWhenPlayerKillingInPvPEnabled)
+	raw["bEnableVoiceChat"] = writeBool(values.EnableVoiceChat)
+	raw["VoiceChatMaxVolumeDistance"] = writeFloat(values.VoiceChatMaxVolumeDistance)
+	raw["VoiceChatZeroVolumeDistance"] = writeFloat(values.VoiceChatZeroVolumeDistance)
 	raw["bAllowEnhanceStat_Health"] = writeBool(values.AllowEnhanceStatHealth)
 	raw["bAllowEnhanceStat_Attack"] = writeBool(values.AllowEnhanceStatAttack)
 	raw["bAllowEnhanceStat_Stamina"] = writeBool(values.AllowEnhanceStatStamina)
 	raw["bAllowEnhanceStat_Weight"] = writeBool(values.AllowEnhanceStatWeight)
 	raw["bAllowEnhanceStat_WorkSpeed"] = writeBool(values.AllowEnhanceStatWorkSpeed)
+	raw["bEnableBuildingPlayerUIdDisplay"] = writeBool(values.EnableBuildingPlayerUIDDisplay)
+	raw["BuildingNameDisplayCacheTTLSeconds"] = writeInt(values.BuildingNameDisplayCacheTTLSeconds)
 	return raw
 }
 
@@ -1080,6 +1121,7 @@ func configFieldDefs() []palConfigFieldDef {
 		configField("enable_aim_assist_pad", "bEnableAimAssistPad", "手柄瞄准辅助", "功能开关", "bool", "启用手柄瞄准辅助。"),
 		configField("enable_aim_assist_keyboard", "bEnableAimAssistKeyboard", "键鼠瞄准辅助", "功能开关", "bool", "启用键鼠瞄准辅助。"),
 		configNumberField("drop_item_max_num", "DropItemMaxNum", "掉落物上限", "世界与事件", "int", "世界中同时存在的掉落物数量上限。", one, nil, 1),
+		configNumberField("physics_active_drop_item_max_num", "PhysicsActiveDropItemMaxNum", "启用物理的掉落物上限", "性能", "int", "同时进行物理模拟的掉落物数量上限；-1 表示不单独限制。", floatPtr(-1), nil, 1),
 		configNumberField("drop_item_max_num_unko", "DropItemMaxNum_UNKO", "UNKO 掉落物上限", "兼容/保留", "int", "官方未公开详细用途的兼容字段，控制 UNKO 掉落物数量上限。", one, nil, 1),
 		configNumberField("base_camp_max_num", "BaseCampMaxNum", "全服据点总数", "据点与建筑", "int", "服务器允许存在的据点总数。", one, nil, 1),
 		configNumberField("base_camp_worker_max_num", "BaseCampWorkerMaxNum", "据点工作帕鲁数", "性能", "int", "每个据点的工作帕鲁上限，官方最大值 50。", one, floatPtr(50), 1),
@@ -1136,9 +1178,14 @@ func configFieldDefs() []palConfigFieldDef {
 		configField("allow_global_palbox_import", "bAllowGlobalPalboxImport", "允许导入全局 Palbox", "功能开关", "bool", "允许从 Global Palbox 加载。"),
 		configNumberField("equipment_durability_damage_rate", "EquipmentDurabilityDamageRate", "装备耐久损耗", "战斗与生存", "float", "装备耐久损耗倍率。", rateMin, nil, 0.1),
 		configNumberField("item_container_force_mark_dirty_interval", "ItemContainerForceMarkDirtyInterval", "容器强制同步间隔", "性能", "float", "打开容器 UI 时强制重新同步的间隔秒数。", rateMin, nil, 0.1),
+		configNumberField("player_data_pal_storage_update_check_tick_interval", "PlayerDataPalStorageUpdateCheckTickInterval", "帕鲁仓库更新检查间隔", "性能", "float", "检查玩家帕鲁仓库数据更新的 Tick 间隔；增大可降低检查频率。", rateMin, nil, 0.1),
 		configNumberField("item_corruption_multiplier", "ItemCorruptionMultiplier", "物品腐坏倍率", "战斗与生存", "float", "物品腐坏速度倍率。", zero, nil, 0.1),
+		configNumberField("monster_farm_action_speed_rate", "MonsterFarmActionSpeedRate", "牧场帕鲁行动速度", "倍率", "float", "帕鲁在家畜牧场执行生产行动的速度倍率。", rateMin, nil, 0.1),
 		configField("deny_technology_list", "DenyTechnologyList", "禁用科技列表", "功能开关", "raw", "禁用指定科技 ID，例如 (\"PALBOX\",\"RepairBench\")。"),
 		configNumberField("guild_rejoin_cooldown_minutes", "GuildRejoinCooldownMinutes", "重新加入公会冷却", "据点与建筑", "int", "离开后重新加入公会的冷却分钟数。", zero, nil, 1),
+		configNumberField("auto_transfer_master_check_interval_seconds", "AutoTransferMasterCheckIntervalSeconds", "会长自动转让检查间隔", "据点与建筑", "float", "检查是否需要自动转让公会会长的间隔秒数。", rateMin, nil, 60),
+		configNumberField("auto_transfer_master_threshold_days", "AutoTransferMasterThresholdDays", "会长自动转让阈值", "据点与建筑", "int", "会长连续未登录达到此天数后允许自动转让。", zero, nil, 1),
+		configNumberField("max_guilds_per_frame", "MaxGuildsPerFrame", "每帧处理公会数", "性能", "int", "每帧最多处理的公会数量；数值越大处理更快，但可能增加瞬时负载。", one, nil, 1),
 		configNumberField("block_respawn_time", "BlockRespawnTime", "复活冷却", "战斗与生存", "float", "死亡后可复活前的冷却秒数。", zero, nil, 1),
 		configNumberField("respawn_penalty_duration_threshold", "RespawnPenaltyDurationThreshold", "复活惩罚阈值", "战斗与生存", "float", "再次死亡时触发复活冷却倍率的生存时长阈值，单位秒。", zero, nil, 1),
 		configNumberField("respawn_penalty_time_scale", "RespawnPenaltyTimeScale", "复活惩罚倍率", "战斗与生存", "float", "应用到复活冷却的倍率。", rateMin, nil, 0.1),
@@ -1147,11 +1194,16 @@ func configFieldDefs() []palConfigFieldDef {
 		configField("additional_drop_item_when_player_killing_in_pvp_mode", "AdditionalDropItemWhenPlayerKillingInPvPMode", "PvP 击杀额外掉落物", "PvP", "string", "启用 PvP 击杀额外掉落后掉落的物品 ID。"),
 		configNumberField("additional_drop_item_num_when_player_killing_in_pvp_mode", "AdditionalDropItemNumWhenPlayerKillingInPvPMode", "PvP 击杀额外掉落数量", "PvP", "int", "启用 PvP 击杀额外掉落后掉落的物品数量。", one, nil, 1),
 		configField("additional_drop_item_when_player_killing_in_pvp_enabled", "bAdditionalDropItemWhenPlayerKillingInPvPMode", "启用 PvP 击杀额外掉落", "PvP", "bool", "玩家在 PvP 中被击杀时是否掉落指定额外物品。"),
+		configField("enable_voice_chat", "bEnableVoiceChat", "启用语音聊天", "网络与管理", "bool", "启用服务器内置语音聊天。"),
+		configNumberField("voice_chat_max_volume_distance", "VoiceChatMaxVolumeDistance", "语音最大音量距离", "网络与管理", "float", "在此距离内语音保持最大音量，单位厘米。", zero, nil, 100),
+		configNumberField("voice_chat_zero_volume_distance", "VoiceChatZeroVolumeDistance", "语音静音距离", "网络与管理", "float", "达到此距离后语音音量衰减为零，单位厘米。", zero, nil, 100),
 		configField("allow_enhance_stat_health", "bAllowEnhanceStat_Health", "允许强化生命", "属性强化", "bool", "允许把属性点分配到生命。"),
 		configField("allow_enhance_stat_attack", "bAllowEnhanceStat_Attack", "允许强化攻击", "属性强化", "bool", "允许把属性点分配到攻击。"),
 		configField("allow_enhance_stat_stamina", "bAllowEnhanceStat_Stamina", "允许强化体力", "属性强化", "bool", "允许把属性点分配到体力。"),
 		configField("allow_enhance_stat_weight", "bAllowEnhanceStat_Weight", "允许强化负重", "属性强化", "bool", "允许把属性点分配到负重。"),
 		configField("allow_enhance_stat_work_speed", "bAllowEnhanceStat_WorkSpeed", "允许强化工作速度", "属性强化", "bool", "允许把属性点分配到工作速度。"),
+		configField("enable_building_player_uid_display", "bEnableBuildingPlayerUIdDisplay", "显示建筑建造者 UID", "据点与建筑", "bool", "在建筑信息中显示建造玩家的 UID。"),
+		configNumberField("building_name_display_cache_ttl_seconds", "BuildingNameDisplayCacheTTLSeconds", "建筑名称缓存时间", "性能", "int", "建筑名称显示缓存的有效时间，单位秒。", zero, nil, 1),
 	}
 }
 

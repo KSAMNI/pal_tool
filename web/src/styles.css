@@ -231,6 +231,20 @@ body {
   flex: 0 0 auto;
 }
 
+.config-field-tooltip {
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+.config-field-raw-key {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgb(255 255 255 / 18%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  overflow-wrap: anywhere;
+  opacity: 0.85;
+}
+
 .span-2 {
   grid-column: 1 / -1;
 }
