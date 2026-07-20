@@ -48,7 +48,7 @@ func TestApplyLaunchArgSummaryRequiresCompletePerformanceFlagSet(t *testing.T) {
 	}
 }
 
-func TestMergeStructuredLaunchSettingsPreservesCustomArgs(t *testing.T) {
+func TestMergeStructuredLaunchSettingsUsesRawArgsAsSourceOfTruth(t *testing.T) {
 	payload := settingsPayload{
 		ServerLaunchArgs:  `-port=8211 -players 24 -publiclobby -NoMods -NumberOfWorkerThreadsServer=7 -useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS -custom "kept value" -workshopdir="C:\Pal Mods"`,
 		GamePort:          9000,
@@ -69,23 +69,23 @@ func TestMergeStructuredLaunchSettingsPreservesCustomArgs(t *testing.T) {
 		t.Fatalf("splitCommandLine(%q) error = %v", merged, err)
 	}
 
-	if got := launchArgInt(args, "-port"); got != 9000 {
-		t.Fatalf("-port = %d, want 9000; merged=%q", got, merged)
+	if got := launchArgInt(args, "-port"); got != 8211 {
+		t.Fatalf("-port = %d, want 8211; merged=%q", got, merged)
 	}
-	if got := launchArgInt(args, "-players"); got != 48 {
-		t.Fatalf("-players = %d, want 48; merged=%q", got, merged)
+	if got := launchArgInt(args, "-players"); got != 24 {
+		t.Fatalf("-players = %d, want 24; merged=%q", got, merged)
 	}
-	if got := launchArgInt(args, "-NumberOfWorkerThreadsServer"); got != 12 {
-		t.Fatalf("-NumberOfWorkerThreadsServer = %d, want 12; merged=%q", got, merged)
+	if got := launchArgInt(args, "-NumberOfWorkerThreadsServer"); got != 7 {
+		t.Fatalf("-NumberOfWorkerThreadsServer = %d, want 7; merged=%q", got, merged)
 	}
-	if hasLaunchFlag(args, "-publiclobby") {
-		t.Fatalf("-publiclobby was not removed: %q", merged)
+	if !hasLaunchFlag(args, "-publiclobby") {
+		t.Fatalf("-publiclobby was not preserved: %q", merged)
 	}
 	if !hasLaunchFlag(args, "-NoMods") {
 		t.Fatalf("-NoMods was not preserved: %q", merged)
 	}
-	if hasAllLaunchFlags(args, performanceLaunchFlags) {
-		t.Fatalf("performance flags were not removed: %q", merged)
+	if !hasAllLaunchFlags(args, performanceLaunchFlags) {
+		t.Fatalf("performance flags were not preserved: %q", merged)
 	}
 	if got := launchArgValue(args, "-custom"); got != "kept value" {
 		t.Fatalf("-custom = %q, want kept value; merged=%q", got, merged)
@@ -95,7 +95,7 @@ func TestMergeStructuredLaunchSettingsPreservesCustomArgs(t *testing.T) {
 	}
 }
 
-func TestSettingsRouteMergesStructuredLaunchFields(t *testing.T) {
+func TestSettingsRoutePersistsRawLaunchArgs(t *testing.T) {
 	panel, err := New(t.TempDir())
 	if err != nil {
 		t.Fatalf("New() error = %v", err)
@@ -156,7 +156,7 @@ func TestSettingsRouteMergesStructuredLaunchFields(t *testing.T) {
 	if saved.RestAPIPassword != "" {
 		t.Fatalf("saved response leaked password: %#v", saved)
 	}
-	if saved.GamePort != 9001 || saved.LaunchPlayers != 32 || saved.WorkerThreads != 8 || saved.PublicLobby || saved.NoMods || saved.PerformanceFlags {
+	if saved.GamePort != 8211 || saved.LaunchPlayers != 16 || saved.WorkerThreads != 0 || !saved.PublicLobby || !saved.NoMods || !saved.PerformanceFlags {
 		t.Fatalf("unexpected derived settings response: %#v", saved)
 	}
 
@@ -171,12 +171,12 @@ func TestSettingsRouteMergesStructuredLaunchFields(t *testing.T) {
 	if err != nil {
 		t.Fatalf("split stored server_launch_args %q: %v", loaded.ServerLaunchArgs, err)
 	}
-	for _, forbidden := range []string{"-publiclobby", "-NoMods", "-useperfthreads", "-NoAsyncLoadingThread", "-UseMultithreadForDS"} {
-		if hasLaunchFlag(args, forbidden) {
-			t.Fatalf("%s was not removed from stored args: %q", forbidden, loaded.ServerLaunchArgs)
+	for _, required := range []string{"-publiclobby", "-NoMods", "-useperfthreads", "-NoAsyncLoadingThread", "-UseMultithreadForDS"} {
+		if !hasLaunchFlag(args, required) {
+			t.Fatalf("%s was not preserved in stored args: %q", required, loaded.ServerLaunchArgs)
 		}
 	}
-	for _, want := range []string{"-port=9001", "-players=32", "-NumberOfWorkerThreadsServer=8"} {
+	for _, want := range []string{"-port=8211", "-players=16"} {
 		if !strings.Contains(loaded.ServerLaunchArgs, want) {
 			t.Fatalf("stored server_launch_args missing %s: %q", want, loaded.ServerLaunchArgs)
 		}

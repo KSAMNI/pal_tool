@@ -1389,6 +1389,19 @@ async function refreshRuntime() {
   }
 }
 
+function settingsPayloadForSave(): Settings {
+  return {
+    ...settings,
+    server_launch_args: settings.server_launch_args.trim(),
+    game_port: getLaunchNumber('-port') ?? undefined,
+    launch_players: getLaunchNumber('-players') ?? undefined,
+    worker_threads: getLaunchNumber('-NumberOfWorkerThreadsServer') ?? undefined,
+    public_lobby: hasLaunchFlag('-publiclobby'),
+    no_mods: hasLaunchFlag('-NoMods'),
+    performance_flags: performanceLaunchFlags.every((flag) => hasLaunchFlag(flag))
+  }
+}
+
 async function saveSettings() {
   if (settingsSaveBlocked.value) {
     message.warning(settingsSaveBlockReason.value || '当前不能保存设置')
@@ -1396,10 +1409,16 @@ async function saveSettings() {
   }
   busy.value = true
   try {
-    const saved = await apiPut<Settings>('/api/settings', settings)
+    const payload = settingsPayloadForSave()
+    const saved = await apiPut<Settings>('/api/settings', payload)
     Object.assign(settings, saved)
+
+    // Verify the value that was persisted instead of leaving a local draft on
+    // screen after the API reports success.
+    const verified = await apiGet<Settings>('/api/settings')
+    Object.assign(settings, verified)
     await loadDashboard()
-    message.success('设置已保存')
+    message.success(`设置已保存：${verified.server_launch_args || '无启动参数'}`)
   } catch (err) {
     message.error((err as Error).message)
   } finally {
