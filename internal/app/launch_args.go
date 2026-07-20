@@ -24,18 +24,13 @@ func applyLaunchArgSummary(settings *settingsPayload) {
 	settings.PerformanceFlags = hasAllLaunchFlags(args, performanceLaunchFlags)
 }
 
+// mergeStructuredLaunchSettings treats server_launch_args as the source of
+// truth. The structured fields are summaries from the previous settings read
+// and may be stale when the user edits the raw command line directly.
 func mergeStructuredLaunchSettings(settings settingsPayload) (string, error) {
-	args, err := splitCommandLine(settings.ServerLaunchArgs)
+	args, err := splitCommandLine(strings.TrimSpace(settings.ServerLaunchArgs))
 	if err != nil {
 		return "", err
-	}
-	args = setLaunchArgInt(args, "-port", settings.GamePort)
-	args = setLaunchArgInt(args, "-players", settings.LaunchPlayers)
-	args = setLaunchArgInt(args, "-NumberOfWorkerThreadsServer", settings.WorkerThreads)
-	args = setLaunchFlag(args, "-publiclobby", settings.PublicLobby)
-	args = setLaunchFlag(args, "-NoMods", settings.NoMods)
-	for _, flag := range performanceLaunchFlags {
-		args = setLaunchFlag(args, flag, settings.PerformanceFlags)
 	}
 	return joinLaunchArgs(args), nil
 }
